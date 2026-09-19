@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #eef1f6;
+  --foreground: #0a0a0c;
+  --muted: #5b6070;
+  --surface: rgba(255, 255, 255, 0.62);
+  --surface-strong: rgba(255, 255, 255, 0.82);
+  --border: rgba(255, 255, 255, 0.7);
+  --shadow: 0 10px 40px -12px rgba(15, 20, 40, 0.28);
+  --accent: #4f46e5;
+  --correct: #16a34a;
+  --wrong: #dc2626;
+}
+
+.dark {
+  --background: #08080b;
+  --foreground: #f4f4f7;
+  --muted: #9aa0b0;
+  --surface: rgba(28, 28, 34, 0.58);
+  --surface-strong: rgba(34, 34, 42, 0.8);
+  --border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.7);
+  --accent: #818cf8;
+  --correct: #22c55e;
+  --wrong: #f87171;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-border-glass: var(--border);
+  --color-accent: var(--accent);
+  --color-correct: var(--correct);
+  --color-wrong: var(--wrong);
+  --font-sans: var(--font-inter);
+}
+
+@utility glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.4s ease, color 0.4s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60vw 60vw at 12% 8%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 60%),
+    radial-gradient(50vw 50vw at 88% 78%, color-mix(in srgb, #06b6d4 24%, transparent), transparent 60%);
+  transition: opacity 0.4s ease;
+}
