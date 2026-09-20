@@ -5,8 +5,13 @@ A responsive Bible quiz game. Scripture quoted from the New International Versio
 ## Structure
 
 ```
-frontend/   Next.js UI only — rendering, animation, theming. No database access, no game rules.
-backend/    Express API — Supabase connection, game rules, scoring, validation, SQL.
+frontend/       Next.js UI only — rendering, animation, theming. No database access, no game rules.
+  src/app/        Routes, layout, global styles
+  src/components/ Screens
+  src/store/      Client state, API calls
+backend/        Express API — Supabase connection, game rules, scoring, validation.
+  src/            Server, game rules, database access
+  sql/            Schema, seed data, migrations
 README.md
 ```
 
@@ -69,18 +74,22 @@ Answers are graded against state the browser never sees. The deadline is enforce
 
 ## Database
 
-SQL in `backend/` is applied through the Supabase SQL editor or the Supabase CLI.
+SQL in `backend/sql/` is applied through the Supabase SQL editor or the Supabase CLI.
 
 | File | Purpose |
 | --- | --- |
-| `schema.sql` | Tables, policies, trigger, `get_quiz` function |
-| `seed.sql` | 75 NIV questions across three difficulties |
-| `lockdown.sql` | Revokes browser-level access to questions once the backend owns the connection |
+| `sql/schema.sql` | Tables, policies, trigger, `get_quiz` function |
+| `sql/seed.sql` | 75 NIV questions across three difficulties |
+| `sql/lockdown.sql` | Revokes browser-level access to questions once the backend owns the connection |
 
 ## Tests
 
 ```bash
-cd backend && npm test
+cd backend && npm test && npm run typecheck
+```
+
+```bash
+cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
 Covers scoring, the timeout and latency-grace boundaries, replay and skip-ahead rejection, and the guarantee that a question leaves the server without its answer.
