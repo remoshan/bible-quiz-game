@@ -5,41 +5,85 @@ A responsive Bible quiz game. Scripture quoted from the New International Versio
 ## Structure
 
 ```
-frontend/   Next.js 16 (App Router, TypeScript), Tailwind v4, Framer Motion, Zustand, next-themes
-backend/    Supabase — SQL schema, policies and seed data
+frontend/   Next.js UI only — rendering, animation, theming. No database access, no game rules.
+backend/    Express API — Supabase connection, game rules, scoring, validation, SQL.
 README.md
 ```
+
+The frontend holds no answers and keeps no score. It renders what the API sends and posts what the player taps.
 
 ## Stack
 
 | Layer | Choice |
 | --- | --- |
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript |
+| UI | Next.js 16 (App Router), TypeScript |
 | Styling | Tailwind CSS v4 |
 | Animation | Framer Motion |
-| State | Zustand |
+| Client state | Zustand |
 | Theming | next-themes (light / dark) |
-| Data & Auth | Supabase (PostgreSQL, Supabase Auth) |
+| API | Express 5 on Node 24, TypeScript run without a build step |
+| Data | Supabase (PostgreSQL) |
 
 ## Running locally
+
+Both services run at once, in two terminals.
+
+```bash
+cd backend && npm install && npm run dev
+```
 
 ```bash
 cd frontend && npm install && npm run dev
 ```
 
-The app runs at http://localhost:3000.
+The API listens on http://localhost:4000 and the UI on http://localhost:3000.
 
-Environment variables live in `frontend/.env`:
+## Environment
+
+`backend/.env` — never reaches the browser:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+PORT=4000
+CORS_ORIGIN=http://localhost:3000
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
+
+`frontend/.env` — the only variable the UI needs:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:4000
+```
+
+## API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Liveness probe |
+| GET | `/api/difficulties` | Question counts and timers, so the UI hard-codes no rules |
+| POST | `/api/games` | Starts a round, returns the first question without its answer |
+| POST | `/api/games/:gameId/answers` | Grades one answer, returns the score and the next question |
+| DELETE | `/api/games/:gameId` | Abandons a round |
+
+Answers are graded against state the browser never sees. The deadline is enforced on the server clock, so a late answer scores nothing regardless of what the client claims.
 
 ## Database
 
 SQL in `backend/` is applied through the Supabase SQL editor or the Supabase CLI.
+
+| File | Purpose |
+| --- | --- |
+| `schema.sql` | Tables, policies, trigger, `get_quiz` function |
+| `seed.sql` | 75 NIV questions across three difficulties |
+| `lockdown.sql` | Revokes browser-level access to questions once the backend owns the connection |
+
+## Tests
+
+```bash
+cd backend && npm test
+```
+
+Covers scoring, the timeout and latency-grace boundaries, replay and skip-ahead rejection, and the guarantee that a question leaves the server without its answer.
 
 ## Game rules
 
@@ -48,5 +92,7 @@ SQL in `backend/` is applied through the Supabase SQL editor or the Supabase CLI
 | Easy | 10 | 20 |
 | Medium | 15 | 15 |
 | Hard | 20 | 15 |
+
+Score is `100 per correct answer + 10 per second left on the clock`.
 
 Guests play without an account; scores reach the leaderboard once signed in.

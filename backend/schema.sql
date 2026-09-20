@@ -71,7 +71,8 @@ as $$
   limit least(greatest(p_count, 1), 50);
 $$;
 
-grant execute on function public.get_quiz(text, integer) to anon, authenticated;
+revoke execute on function public.get_quiz(text, integer) from public, anon, authenticated;
+grant execute on function public.get_quiz(text, integer) to service_role;
 
 alter table public.users enable row level security;
 alter table public.questions enable row level security;
@@ -85,10 +86,6 @@ create policy "Players can update their own profile"
   on public.users for update
   using ((select auth.uid()) = id)
   with check ((select auth.uid()) = id);
-
-create policy "Questions are viewable by everyone"
-  on public.questions for select
-  using (true);
 
 create policy "Leaderboard is viewable by everyone"
   on public.leaderboard for select
