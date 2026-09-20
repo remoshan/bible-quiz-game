@@ -3,7 +3,6 @@ import cors from "cors";
 import { fetchQuestions } from "./db.ts";
 import {
   DIFFICULTIES,
-  abandonSession,
   createSession,
   isChoice,
   isDifficulty,
@@ -68,11 +67,6 @@ app.post("/api/games/:gameId/answers", (req, res) => {
   }
 
   res.json(outcome);
-});
-
-app.delete("/api/games/:gameId", (req, res) => {
-  abandonSession(req.params.gameId);
-  res.status(204).end();
 });
 
 app.use((error: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

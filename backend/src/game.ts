@@ -209,7 +209,3 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
     summary: null,
   };
 }
-
-export function abandonSession(gameId: string) {
-  return sessions.delete(gameId);
-}
