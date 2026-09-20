@@ -1,6 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect } from "react";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+} from "framer-motion";
 import { useGameStore } from "@/store/useGameStore";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -14,7 +20,7 @@ export function GameScreen() {
     question,
     index,
     totalQuestions,
-    secondsPerQuestion,
+    deadline,
     score,
     selected,
     correctIndex,
@@ -23,9 +29,22 @@ export function GameScreen() {
     reset,
   } = useGameStore();
 
-  if (!question) return null;
-
   const isRevealed = correctIndex !== null;
+  const timeLeft = useMotionValue(1);
+
+  useEffect(() => {
+    if (isRevealed) return;
+
+    timeLeft.set(1);
+    const countdown = animate(timeLeft, 0, {
+      duration: Math.max(0, (deadline - Date.now()) / 1000),
+      ease: "linear",
+    });
+
+    return () => countdown.stop();
+  }, [index, isRevealed, deadline, timeLeft]);
+
+  if (!question) return null;
 
   return (
     <main className="mx-auto flex h-dvh w-full max-w-md flex-col px-5 pb-6 pt-5">
@@ -49,44 +68,47 @@ export function GameScreen() {
       </header>
 
       <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
-        <div
-          key={index}
+        <motion.div
           className="h-full w-full origin-left rounded-full bg-accent"
-          style={{
-            animation: `timer-shrink ${secondsPerQuestion}s linear forwards`,
-            animationPlayState: isRevealed ? "paused" : "running",
-          }}
+          style={{ scaleX: timeLeft }}
         />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden py-5">
-        <motion.div
-          key={question.id}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="glass rounded-3xl px-6 py-7"
-        >
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-accent">
-            {TYPE_LABELS[question.type] ?? question.type}
-          </span>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={question.id}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{
+              opacity: 0,
+              x: -40,
+              transition: { duration: 0.16, ease: "easeIn" },
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="glass rounded-3xl px-6 py-7"
+          >
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-accent">
+              {TYPE_LABELS[question.type] ?? question.type}
+            </span>
 
-          <p className="mt-3 text-balance text-xl font-medium leading-snug">
-            {question.verse_text}
-          </p>
+            <p className="mt-3 text-balance text-xl font-medium leading-snug">
+              {question.verse_text}
+            </p>
 
-          <p className="mt-4 text-[13px] text-muted">{question.prompt}</p>
+            <p className="mt-4 text-[13px] text-muted">{question.prompt}</p>
 
-          {reference ? (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-2 text-[13px] font-semibold text-accent"
-            >
-              {reference} · {question.translation}
-            </motion.p>
-          ) : null}
-        </motion.div>
+            {reference ? (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-2 text-[13px] font-semibold text-accent"
+              >
+                {reference} · {question.translation}
+              </motion.p>
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <div className="grid shrink-0 grid-cols-1 gap-2.5">
@@ -96,9 +118,15 @@ export function GameScreen() {
 
           const revealStyle = isRevealed
             ? isCorrect
-              ? { background: "var(--correct-surface)", boxShadow: "0 0 0 2px var(--correct)" }
+              ? {
+                  background: "var(--correct-surface)",
+                  boxShadow: "0 0 0 2px var(--correct)",
+                }
               : isPicked
-                ? { background: "var(--wrong-surface)", boxShadow: "0 0 0 2px var(--wrong)" }
+                ? {
+                    background: "var(--wrong-surface)",
+                    boxShadow: "0 0 0 2px var(--wrong)",
+                  }
                 : { opacity: 0.45 }
             : undefined;
 
@@ -108,7 +136,9 @@ export function GameScreen() {
               type="button"
               disabled={isRevealed}
               whileTap={{ scale: 0.98 }}
-              animate={{ scale: isRevealed && (isCorrect || isPicked) ? 1.035 : 1 }}
+              animate={{
+                scale: isRevealed && (isCorrect || isPicked) ? 1.035 : 1,
+              }}
               transition={{ type: "spring", stiffness: 500, damping: 14 }}
               onClick={() => void answer(i)}
               className="glass rounded-2xl px-5 py-3.5 text-left text-[15px] font-medium transition-colors"

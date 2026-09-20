@@ -87,12 +87,3 @@ body::before {
     radial-gradient(58vw 58vw at 78% 104%, color-mix(in srgb, var(--warm) 22%, transparent), transparent 62%);
   transition: opacity 0.4s ease;
 }
-
-@keyframes timer-shrink {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
-}
