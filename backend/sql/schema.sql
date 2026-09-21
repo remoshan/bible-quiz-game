@@ -19,6 +19,8 @@ create table public.questions (
   created_at timestamptz not null default now()
 );
 
+create unique index users_display_name_key on public.users (lower(display_name));
+
 create index questions_difficulty_idx on public.questions (difficulty);
 
 create table public.leaderboard (
