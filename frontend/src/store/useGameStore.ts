@@ -1,6 +1,6 @@
 import { create } from "zustand";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import { request } from "@/lib/api";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export type Difficulty = "easy" | "medium" | "hard";
 
@@ -30,6 +30,8 @@ export type Summary = {
 
 export type GameStatus = "idle" | "loading" | "playing" | "game_over";
 
+export type SaveState = "idle" | "saving" | "saved" | "failed";
+
 type GameState = {
   status: GameStatus;
   error: string | null;
@@ -48,7 +50,11 @@ type GameState = {
   correctIndex: number | null;
   reference: string | null;
   summary: Summary | null;
+  saveState: SaveState;
+  rank: number | null;
+  saveError: string | null;
   loadDifficulties: () => Promise<void>;
+  saveScore: () => Promise<void>;
   start: (difficulty: Difficulty) => Promise<void>;
   answer: (choice: number | null) => Promise<void>;
   reset: () => void;
@@ -69,6 +75,9 @@ const initialGame = {
   correctIndex: null,
   reference: null,
   summary: null,
+  saveState: "idle" as SaveState,
+  rank: null,
+  saveError: null,
 };
 
 let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
@@ -81,21 +90,6 @@ const clearTimers = () => {
   revealTimer = undefined;
 };
 
-async function request(path: string, init?: RequestInit) {
-  const response = await fetch(`${API}${path}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
-  });
-
-  const body = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(body?.error ?? `Request failed with status ${response.status}`);
-  }
-
-  return body;
-}
-
 export const useGameStore = create<GameState>((set, get) => {
   const armDeadline = (deadline: number) => {
     if (deadlineTimer) clearTimeout(deadlineTimer);
@@ -107,6 +101,30 @@ export const useGameStore = create<GameState>((set, get) => {
     error: null,
     difficulties: [],
     ...initialGame,
+
+    saveScore: async () => {
+      const { gameId, saveState } = get();
+      if (!gameId || saveState === "saving" || saveState === "saved") return;
+
+      const token = await useAuthStore.getState().accessToken();
+      if (!token) return;
+
+      set({ saveState: "saving", saveError: null });
+
+      try {
+        const body = await request(`/api/games/${gameId}/save`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        set({ saveState: "saved", rank: body.rank });
+      } catch (error) {
+        set({
+          saveState: "failed",
+          saveError: error instanceof Error ? error.message : "Could not save your score.",
+        });
+      }
+    },
 
     loadDifficulties: async () => {
       if (get().difficulties.length > 0) return;

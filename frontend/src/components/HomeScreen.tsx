@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
+import { AuthPanel } from "@/components/AuthPanel";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useGameStore, type Difficulty } from "@/store/useGameStore";
 
 const container: Variants = {
@@ -15,15 +17,18 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 280, damping: 26 } },
 };
 
-export function HomeScreen() {
+export function HomeScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => void }) {
   const status = useGameStore((s) => s.status);
   const error = useGameStore((s) => s.error);
   const start = useGameStore((s) => s.start);
   const difficulties = useGameStore((s) => s.difficulties);
   const loadDifficulties = useGameStore((s) => s.loadDifficulties);
 
+  const session = useAuthStore((s) => s.session);
+  const signOut = useAuthStore((s) => s.signOut);
+
   const [choice, setChoice] = useState<Difficulty | null>(null);
-  const [showAuthHint, setShowAuthHint] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     void loadDifficulties();
@@ -122,17 +127,32 @@ export function HomeScreen() {
           <motion.button
             variants={item}
             type="button"
-            onClick={() => setShowAuthHint(true)}
-            className="py-1 text-[13px] text-muted underline decoration-muted/40 underline-offset-4"
+            onClick={onOpenLeaderboard}
+            className="glass rounded-2xl py-3 text-[14px] font-medium"
           >
-            Sign in to save your scores
+            Leaderboard
           </motion.button>
 
-          {showAuthHint ? (
-            <p className="text-center text-xs text-muted">
-              Accounts land in the final step. Guest scores work right now.
-            </p>
-          ) : null}
+          {session ? (
+            <motion.p variants={item} className="text-center text-[13px] text-muted">
+              Signed in as <span className="font-medium text-foreground">{session.user.displayName}</span>
+              {" · "}
+              <button type="button" onClick={signOut} className="underline underline-offset-4">
+                Sign out
+              </button>
+            </motion.p>
+          ) : (
+            <motion.button
+              variants={item}
+              type="button"
+              onClick={() => setShowAuth((open) => !open)}
+              className="py-1 text-[13px] text-muted underline decoration-muted/40 underline-offset-4"
+            >
+              {showAuth ? "Maybe later" : "Sign in to save your scores"}
+            </motion.button>
+          )}
+
+          {!session && showAuth ? <AuthPanel onSuccess={() => setShowAuth(false)} /> : null}
 
           {error ? (
             <p className="glass rounded-2xl px-4 py-3 text-center text-xs text-wrong">{error}</p>

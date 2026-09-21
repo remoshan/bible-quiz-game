@@ -3,9 +3,11 @@ import { mock, test } from "node:test";
 import {
   REVEAL_MS,
   createSession,
+  getSavableSession,
   isChoice,
   isDifficulty,
   isIndex,
+  markSessionSaved,
   submitAnswer,
   type StoredQuestion,
 } from "./game.ts";
@@ -156,4 +158,49 @@ test("the final answer finishes the game and returns a summary", () => {
   const afterEnd = submitAnswer(game.gameId, 1, 2);
   assert.equal(afterEnd.ok, false);
   assert.equal(afterEnd.ok === false && afterEnd.reason, "already_finished");
+});
+
+test("an unfinished game cannot be saved to the leaderboard", () => {
+  const game = createSession("easy", makeQuestions(3));
+
+  const savable = getSavableSession(game.gameId);
+  assert.equal(savable.ok, false);
+  assert.equal(savable.ok === false && savable.reason, "not_finished");
+});
+
+test("an unknown game cannot be saved", () => {
+  const savable = getSavableSession("no-such-game");
+  assert.equal(savable.ok, false);
+  assert.equal(savable.ok === false && savable.reason, "not_found");
+});
+
+test("a finished game yields the score the server recorded, not one supplied by a client", () => {
+  const game = createSession("easy", makeQuestions(2));
+
+  submitAnswer(game.gameId, 0, 2);
+  const last = submitAnswer(game.gameId, 1, 0);
+  assert.equal(last.ok, true);
+
+  const savable = getSavableSession(game.gameId);
+  assert.equal(savable.ok, true);
+  assert.equal(savable.ok === true && savable.summary.correctAnswers, 1);
+  assert.equal(savable.ok === true && savable.summary.totalQuestions, 2);
+  assert.equal(
+    savable.ok === true && savable.summary.score,
+    last.ok === true ? last.summary?.score : -1
+  );
+});
+
+test("a score cannot be submitted to the leaderboard twice", () => {
+  const game = createSession("easy", makeQuestions(2));
+
+  submitAnswer(game.gameId, 0, 2);
+  submitAnswer(game.gameId, 1, 2);
+
+  assert.equal(getSavableSession(game.gameId).ok, true);
+  markSessionSaved(game.gameId);
+
+  const second = getSavableSession(game.gameId);
+  assert.equal(second.ok, false);
+  assert.equal(second.ok === false && second.reason, "already_saved");
 });
