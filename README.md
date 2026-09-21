@@ -65,12 +65,19 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/health` | Liveness probe |
+| POST | `/api/auth/signup` | Creates an account and returns a session |
+| POST | `/api/auth/signin` | Exchanges email and password for a session |
+| POST | `/api/auth/refresh` | Trades a refresh token for a fresh session |
+| GET | `/api/auth/me` | The signed-in player |
 | GET | `/api/difficulties` | Question counts and timers, so the UI hard-codes no rules |
 | POST | `/api/games` | Starts a round, returns the first question without its answer |
 | POST | `/api/games/:gameId/answers` | Grades one answer, returns the score and the next question |
-| DELETE | `/api/games/:gameId` | Abandons a round |
+| POST | `/api/games/:gameId/save` | Writes the finished round to the leaderboard |
+| GET | `/api/leaderboard` | Top scores, optionally filtered by difficulty |
 
 Answers are graded against state the browser never sees. The deadline is enforced on the server clock, so a late answer scores nothing regardless of what the client claims.
+
+Saving a score takes no score from the client. The server writes the total it recorded for that game id, once, and only for a signed-in player.
 
 ## Database
 
@@ -104,4 +111,6 @@ Covers scoring, the timeout and latency-grace boundaries, replay and skip-ahead 
 
 Score is `100 per correct answer + 10 per second left on the clock`.
 
-Guests play without an account; scores reach the leaderboard once signed in.
+Guests play without an account. Finishing a round offers sign-in, and the score saves as soon as the account exists.
+
+Supabase email confirmation is on by default, so a new account has to confirm before it can sign in. Turn it off under Authentication -> Providers -> Email if you would rather players start immediately.

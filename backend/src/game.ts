@@ -54,6 +54,16 @@ type Session = {
   deadline: number;
   startedAt: number;
   finished: boolean;
+  saved: boolean;
+  summary: GameSummary | null;
+};
+
+export type GameSummary = {
+  score: number;
+  correctAnswers: number;
+  totalQuestions: number;
+  durationMs: number;
+  difficulty: Difficulty;
 };
 
 const sessions = new Map<string, Session>();
@@ -83,6 +93,16 @@ export function settingFor(difficulty: Difficulty): DifficultySetting {
   return DIFFICULTIES.find((d) => d.key === difficulty)!;
 }
 
+function summaryFor(session: Session, now: number): GameSummary {
+  return {
+    score: session.score,
+    correctAnswers: session.correctAnswers,
+    totalQuestions: session.questions.length,
+    durationMs: now - session.startedAt,
+    difficulty: session.difficulty,
+  };
+}
+
 function toPublic(question: StoredQuestion): PublicQuestion {
   return {
     id: question.id,
@@ -108,6 +128,8 @@ export function createSession(difficulty: Difficulty, questions: StoredQuestion[
     deadline: now + seconds * 1000,
     startedAt: now,
     finished: false,
+    saved: false,
+    summary: null,
   };
 
   sessions.set(session.id, session);
@@ -168,6 +190,7 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
 
   if (isLast) {
     session.finished = true;
+    session.summary = summaryFor(session, now);
 
     return {
       ok: true,
@@ -179,13 +202,7 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
       correctAnswers: session.correctAnswers,
       status: "finished",
       next: null,
-      summary: {
-        score: session.score,
-        correctAnswers: session.correctAnswers,
-        totalQuestions: session.questions.length,
-        durationMs: now - session.startedAt,
-        difficulty: session.difficulty,
-      },
+      summary: session.summary,
     };
   }
 
@@ -208,4 +225,22 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
     },
     summary: null,
   };
+}
+
+export type SavableResult =
+  | { ok: true; summary: GameSummary }
+  | { ok: false; reason: "not_found" | "not_finished" | "already_saved" };
+
+export function getSavableSession(gameId: string): SavableResult {
+  const session = sessions.get(gameId);
+  if (!session) return { ok: false, reason: "not_found" };
+  if (!session.finished) return { ok: false, reason: "not_finished" };
+  if (session.saved || !session.summary) return { ok: false, reason: "already_saved" };
+
+  return { ok: true, summary: session.summary };
+}
+
+export function markSessionSaved(gameId: string) {
+  const session = sessions.get(gameId);
+  if (session) session.saved = true;
 }
