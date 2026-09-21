@@ -73,11 +73,13 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 | POST | `/api/games` | Starts a round, returns the first question without its answer |
 | POST | `/api/games/:gameId/answers` | Grades one answer, returns the score and the next question |
 | POST | `/api/games/:gameId/save` | Writes the finished round to the leaderboard |
-| GET | `/api/leaderboard` | Top scores, optionally filtered by difficulty |
+| GET | `/api/leaderboard` | Best score per player for one difficulty, plus the caller's own standing |
 
 Answers are graded against state the browser never sees. The deadline is enforced on the server clock, so a late answer scores nothing regardless of what the client claims.
 
 Saving a score takes no score from the client. The server writes the total it recorded for that game id, once, and only for a signed-in player.
+
+The leaderboard shows one row per player, their best round at that difficulty, so replaying cannot crowd out other players. A signed-in caller also receives their own rank even when it falls outside the returned page.
 
 ## Database
 
@@ -88,6 +90,7 @@ SQL in `backend/sql/` is applied through the Supabase SQL editor or the Supabase
 | `sql/schema.sql` | Tables, policies, trigger, `get_quiz` function |
 | `sql/seed.sql` | 75 NIV questions across three difficulties |
 | `sql/lockdown.sql` | Revokes browser-level access to questions once the backend owns the connection |
+| `sql/leaderboard.sql` | Best-score-per-player ranking functions and the unique display name index |
 
 ## Tests
 
@@ -112,5 +115,7 @@ Covers scoring, the timeout and latency-grace boundaries, replay and skip-ahead 
 Score is `100 per correct answer + 10 per second left on the clock`.
 
 Guests play without an account. Finishing a round offers sign-in, and the score saves as soon as the account exists.
+
+Display names are unique, case-insensitively.
 
 Supabase email confirmation is on by default, so a new account has to confirm before it can sign in. Turn it off under Authentication -> Providers -> Email if you would rather players start immediately.

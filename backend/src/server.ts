@@ -1,6 +1,12 @@
 import express from "express";
 import cors from "cors";
-import { fetchLeaderboard, fetchQuestions, rankFor, saveScore } from "./db.ts";
+import {
+  fetchLeaderboard,
+  fetchPlayerStanding,
+  fetchQuestions,
+  isDisplayNameTaken,
+  saveScore,
+} from "./db.ts";
 import {
   isDisplayName,
   isEmail,
@@ -72,6 +78,11 @@ app.post("/api/auth/signup", async (req, res) => {
 
   if (!isDisplayName(displayName)) {
     res.status(400).json({ error: "Choose a display name of 1-32 characters." });
+    return;
+  }
+
+  if (await isDisplayNameTaken(displayName)) {
+    res.status(409).json({ error: "That display name is taken. Try another." });
     return;
   }
 
@@ -199,15 +210,15 @@ app.post("/api/games/:gameId/save", async (req, res) => {
 
   markSessionSaved(req.params.gameId);
 
-  const rank = await rankFor(summary.difficulty, summary.score);
+  const standing = await fetchPlayerStanding(summary.difficulty, user.id);
 
-  res.status(201).json({ saved: true, rank, summary });
+  res.status(201).json({ saved: true, rank: standing?.rank ?? null, summary });
 });
 
 app.get("/api/leaderboard", async (req, res) => {
   const { difficulty, limit } = req.query;
 
-  if (difficulty !== undefined && !isDifficulty(difficulty)) {
+  if (!isDifficulty(difficulty)) {
     res.status(400).json({ error: "difficulty must be one of easy, medium, hard" });
     return;
   }
@@ -215,9 +226,18 @@ app.get("/api/leaderboard", async (req, res) => {
   const parsed = Number(limit ?? 20);
   const size = Number.isInteger(parsed) ? Math.min(Math.max(parsed, 1), 100) : 20;
 
-  const entries = await fetchLeaderboard(difficulty ?? null, size);
+  const entries = await fetchLeaderboard(difficulty, size);
 
-  res.json({ entries });
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice(7).trim() : null;
+  const viewer = token ? await userFromToken(token) : null;
+
+  const you = viewer ? await fetchPlayerStanding(difficulty, viewer.id) : null;
+
+  res.json({
+    entries,
+    you: you ? { ...you, userId: viewer!.id, displayName: viewer!.displayName } : null,
+  });
 });
 
 app.use((error: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

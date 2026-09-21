@@ -34,13 +34,22 @@ export type ScoreRow = {
 
 export type LeaderboardEntry = {
   id: string;
-  difficulty: string;
+  userId: string;
+  displayName: string;
   score: number;
   correctAnswers: number;
   totalQuestions: number;
   durationMs: number;
   createdAt: string;
-  displayName: string;
+};
+
+export type PlayerStanding = {
+  rank: number;
+  score: number;
+  correctAnswers: number;
+  totalQuestions: number;
+  durationMs: number;
+  createdAt: string;
 };
 
 export async function saveScore(row: ScoreRow) {
@@ -49,44 +58,57 @@ export async function saveScore(row: ScoreRow) {
   if (error) throw new Error(`Score save failed: ${error.message}`);
 }
 
-export async function rankFor(difficulty: string, score: number) {
-  const { count, error } = await supabase
-    .from("leaderboard")
-    .select("id", { count: "exact", head: true })
-    .eq("difficulty", difficulty)
-    .gt("score", score);
-
-  if (error) throw new Error(`Rank lookup failed: ${error.message}`);
-
-  return (count ?? 0) + 1;
-}
-
-export async function fetchLeaderboard(difficulty: string | null, limit: number) {
-  let query = supabase
-    .from("leaderboard")
-    .select("id, difficulty, score, correct_answers, total_questions, duration_ms, created_at, users(display_name)")
-    .order("score", { ascending: false })
-    .order("created_at", { ascending: true })
-    .limit(limit);
-
-  if (difficulty) query = query.eq("difficulty", difficulty);
-
-  const { data, error } = await query;
+export async function fetchLeaderboard(difficulty: string, limit: number) {
+  const { data, error } = await supabase.rpc("get_leaderboard", {
+    p_difficulty: difficulty,
+    p_limit: limit,
+  });
 
   if (error) throw new Error(`Leaderboard lookup failed: ${error.message}`);
 
-  return (data ?? []).map((row): LeaderboardEntry => {
-    const profile = row.users as unknown as { display_name?: string } | null;
-
-    return {
+  return (data ?? []).map(
+    (row: Record<string, string & number>): LeaderboardEntry => ({
       id: row.id,
-      difficulty: row.difficulty,
+      userId: row.user_id,
+      displayName: row.display_name,
       score: row.score,
       correctAnswers: row.correct_answers,
       totalQuestions: row.total_questions,
       durationMs: row.duration_ms,
       createdAt: row.created_at,
-      displayName: profile?.display_name ?? "Player",
-    };
+    })
+  );
+}
+
+export async function fetchPlayerStanding(difficulty: string, userId: string) {
+  const { data, error } = await supabase.rpc("get_player_standing", {
+    p_difficulty: difficulty,
+    p_user_id: userId,
   });
+
+  if (error) throw new Error(`Standing lookup failed: ${error.message}`);
+
+  const row = (data ?? [])[0];
+  if (!row) return null;
+
+  return {
+    rank: Number(row.rank),
+    score: row.score,
+    correctAnswers: row.correct_answers,
+    totalQuestions: row.total_questions,
+    durationMs: row.duration_ms,
+    createdAt: row.created_at,
+  } satisfies PlayerStanding;
+}
+
+export async function isDisplayNameTaken(displayName: string) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id")
+    .ilike("display_name", displayName.trim())
+    .limit(1);
+
+  if (error) throw new Error(`Display name lookup failed: ${error.message}`);
+
+  return (data ?? []).length > 0;
 }
