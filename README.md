@@ -1,6 +1,6 @@
-# Verse — Catholic Bible Quiz
+# Verse - A Catholic Bible Quiz Game
 
-A responsive Bible quiz game. Scripture quoted from the New International Version (NIV).
+A responsive Catholic Bible quiz game. Scripture quoted from the Catholic Public Domain Version (CPDV), which is in the public domain and carries the full 73-book canon.
 
 ## Structure
 
@@ -85,12 +85,27 @@ The leaderboard shows one row per player, their best round at that difficulty, s
 
 SQL in `backend/sql/` is applied through the Supabase SQL editor or the Supabase CLI.
 
+`schema.sql` creates the tables and runs once, on a new project. On a database that already has them it fails with `relation "users" already exists`, which is the script doing its job; later schema changes ship as their own `alter` statements.
+
 | File | Purpose |
 | --- | --- |
 | `sql/schema.sql` | Tables, policies, trigger, `get_quiz` function |
-| `sql/seed.sql` | 75 NIV questions across three difficulties |
+| `sql/seed.sql` | 75 CPDV questions across three difficulties, generated from `scripts/question-bank.ts` |
 | `sql/lockdown.sql` | Revokes browser-level access to questions once the backend owns the connection |
 | `sql/leaderboard.sql` | Best-score-per-player ranking functions and the unique display name index |
+| `sql/reset-test-data.sql` | Lists every registered player, then deletes them and their scores. Irreversible |
+
+## Question bank
+
+`backend/scripts/question-bank.ts` is the source of truth for all 75 questions. `sql/seed.sql` is generated from it and should never be edited by hand.
+
+```bash
+cd backend && npm run verify:questions
+```
+
+The check downloads the CPDV text once to `backend/.cache/`, then asserts for every question that the verse matches the source word for word, that a fill-in-the-blank restores to the original verse, that a guess-the-book answer really is that book, that no verse gives away its own answer, and that `sql/seed.sql` is still in step with the bank. Regenerate the SQL with `npm run seed:write`.
+
+Speaker attribution on `who_said_it` questions is editorial and is not machine-checked.
 
 ## Tests
 

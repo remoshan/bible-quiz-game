@@ -7,7 +7,9 @@
     "dev": "node --watch --env-file=.env src/server.ts",
     "start": "node --env-file=.env src/server.ts",
     "test": "node --test src/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:questions": "node scripts/verify-questions.ts",
+    "seed:write": "node scripts/verify-questions.ts --write"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

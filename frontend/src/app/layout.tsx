@@ -12,7 +12,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Verse — The Daily Word Quiz",
+  title: "Verse - A Catholic Bible Quiz Game",
   description: "Test your knowledge of Scripture in daily rounds of increasing challenge.",
 };
 

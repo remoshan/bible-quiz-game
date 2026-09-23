@@ -47,7 +47,7 @@ export function HomeScreen({
         <h1 className="font-serif text-2xl font-semibold leading-none tracking-tight lg:text-3xl">
           Verse
         </h1>
-        <p className="label mt-2">The Daily Word Quiz</p>
+        <p className="label mt-2">A Catholic Bible Quiz Game</p>
       </header>
 
       <div className="flex flex-1 flex-col lg:flex-row lg:items-center lg:gap-16">
@@ -172,7 +172,7 @@ export function HomeScreen({
       </div>
 
       <footer className="rule-t shrink-0 pt-4 text-2xs text-faint">
-        Scripture quoted from the New International Version
+        Scripture from the Catholic Public Domain Version
       </footer>
     </main>
   );
