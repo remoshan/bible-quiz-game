@@ -1,25 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import { AuthScreen } from "@/components/AuthScreen";
 import { GameScreen } from "@/components/GameScreen";
 import { HomeScreen } from "@/components/HomeScreen";
 import { LeaderboardScreen } from "@/components/LeaderboardScreen";
 import { ResultsScreen } from "@/components/ResultsScreen";
+import { ThemeControl } from "@/components/ThemeControl";
 import { useGameStore } from "@/store/useGameStore";
+
+type Overlay = "leaderboard" | "signin" | null;
 
 export default function Page() {
   const status = useGameStore((s) => s.status);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [overlay, setOverlay] = useState<Overlay>(null);
 
-  if (showLeaderboard) {
-    return <LeaderboardScreen onBack={() => setShowLeaderboard(false)} />;
-  }
+  const close = () => setOverlay(null);
 
-  if (status === "playing") return <GameScreen />;
+  return (
+    <>
+      <ThemeControl />
 
-  if (status === "game_over") {
-    return <ResultsScreen onOpenLeaderboard={() => setShowLeaderboard(true)} />;
-  }
-
-  return <HomeScreen onOpenLeaderboard={() => setShowLeaderboard(true)} />;
+      {overlay === "leaderboard" ? (
+        <LeaderboardScreen onBack={close} />
+      ) : overlay === "signin" ? (
+        <AuthScreen onBack={close} />
+      ) : status === "playing" ? (
+        <GameScreen />
+      ) : status === "game_over" ? (
+        <ResultsScreen onOpenLeaderboard={() => setOverlay("leaderboard")} />
+      ) : (
+        <HomeScreen
+          onOpenLeaderboard={() => setOverlay("leaderboard")}
+          onOpenSignIn={() => setOverlay("signin")}
+        />
+      )}
+    </>
+  );
 }

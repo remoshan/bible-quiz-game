@@ -35,7 +35,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 280, damping: 26 }}
-      className="glass flex flex-col gap-2.5 rounded-2xl p-4"
+      className="flex flex-col gap-2.5"
     >
       {isSignUp ? (
         <input
@@ -46,7 +46,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
           autoComplete="nickname"
           maxLength={32}
           required
-          className="hairline rounded-xl bg-transparent px-4 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
+          className="border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
         />
       ) : null}
 
@@ -57,7 +57,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         placeholder="Email"
         autoComplete="email"
         required
-        className="hairline rounded-xl bg-transparent px-4 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
+        className="border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
       />
 
       <input
@@ -67,13 +67,13 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         placeholder={isSignUp ? "Password (8+ characters)" : "Password"}
         autoComplete={isSignUp ? "new-password" : "current-password"}
         required
-        className="hairline rounded-xl bg-transparent px-4 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
+        className="border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
       />
 
       <button
         type="submit"
         disabled={busy}
-        className="rounded-xl bg-accent py-3 text-sm font-semibold uppercase tracking-[0.12em] text-accent-foreground transition-opacity disabled:opacity-60"
+        className="bg-accent py-3 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground transition-opacity disabled:opacity-60"
       >
         {busy ? "Working…" : isSignUp ? "Create account" : "Sign in"}
       </button>

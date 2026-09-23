@@ -87,21 +87,20 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
   const inTopList = you !== null && entries !== null && entries.some((e) => e.userId === you.userId);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-7 pt-4 sm:max-w-lg">
-      <header className="flex items-center justify-between gap-4">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg">
+      <header className="flex items-center gap-3">
         <button
           type="button"
           onClick={onBack}
-          className="glass flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:text-foreground"
+          className="-ml-1 flex h-8 w-8 items-center justify-center text-faint transition-colors hover:text-foreground"
           aria-label="Back"
         >
           <BackIcon className="h-4 w-4" />
         </button>
-        <h1 className="font-serif text-lg font-semibold tracking-tight">Leaderboard</h1>
-        <span className="h-9 w-9" />
+        <h1 className="font-serif text-2xl font-semibold tracking-tight">Leaderboard</h1>
       </header>
 
-      <div className="mt-5 flex gap-2">
+      <div className="mt-6 flex">
         {difficulties.map((setting) => {
           const isActive = setting.key === difficulty;
 
@@ -110,12 +109,12 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
               key={setting.key}
               type="button"
               onClick={() => setDifficulty(setting.key)}
-              className={
+              className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+              style={
                 isActive
-                  ? "glass-raised flex-1 rounded-xl py-2.5 text-xs font-semibold uppercase tracking-[0.1em]"
-                  : "hairline flex-1 rounded-xl bg-transparent py-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted"
+                  ? { color: "var(--foreground)", boxShadow: "inset 0 -2px 0 0 var(--accent)" }
+                  : { color: "var(--faint)", boxShadow: "inset 0 -1px 0 0 var(--rule)" }
               }
-              style={isActive ? { borderColor: "var(--accent)" } : undefined}
             >
               {setting.label}
             </button>
@@ -123,23 +122,21 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
         })}
       </div>
 
-      <p className="mt-3 text-center text-2xs uppercase tracking-[0.16em] text-faint">
-        Each player&rsquo;s best round
-      </p>
+      <p className="label mt-5">Each player&rsquo;s best round</p>
 
-      <div className="mt-3 flex flex-1 flex-col gap-2">
+      <div className="mt-3 flex flex-1 flex-col">
         {error ? (
-          <p className="glass rounded-2xl p-4 text-center text-xs text-wrong">{error}</p>
+          <p className="border border-rule p-4 text-xs text-wrong">{error}</p>
         ) : null}
 
         {!entries && !error ? (
-          <p className="mt-8 text-center text-2xs uppercase tracking-[0.16em] text-faint">Loading</p>
+          <p className="label mt-10">Loading</p>
         ) : null}
 
         {entries?.length === 0 ? (
-          <div className="glass mt-8 flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
-            <LaurelIcon className="h-7 w-7 text-faint" />
-            <p className="text-sm text-muted">No scores here yet. Be the first.</p>
+          <div className="mt-12 flex flex-col items-start gap-4">
+            <LaurelIcon className="h-8 w-8 text-faint" />
+            <p className="font-serif text-xl text-muted">No scores here yet. Be the first.</p>
           </div>
         ) : null}
 
@@ -158,7 +155,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
         ))}
 
         {you && !inTopList ? (
-          <div className="mt-2 border-t border-white/10 pt-3">
+          <div className="rule-t mt-4 pt-4">
             <Row
               position={you.rank}
               name={you.displayName}
@@ -200,22 +197,22 @@ function Row({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="glass flex items-center gap-3 rounded-2xl px-4 py-3"
-      style={isYou ? { boxShadow: "0 0 0 2px var(--accent)" } : undefined}
+      className="rule-t flex items-center gap-4 py-3.5 pl-3 pr-1 last:rule-b"
+      style={
+        isYou
+          ? { background: "var(--accent-tint)", boxShadow: "inset 2px 0 0 0 var(--accent)" }
+          : undefined
+      }
     >
       <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
-        style={
-          position <= 3
-            ? { color: "var(--gold)", border: "1px solid var(--gold)" }
-            : { color: "var(--faint)", border: "1px solid var(--border)" }
-        }
+        className="w-7 shrink-0 font-serif text-lg tabular-nums"
+        style={{ color: position <= 3 ? "var(--gold)" : "var(--faint)" }}
       >
         {position}
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-serif text-base font-semibold">
+        <span className="block truncate font-serif text-xl font-semibold leading-tight">
           {name}
           {isYou ? (
             <span className="ml-2 text-2xs font-sans font-medium uppercase tracking-[0.14em] text-accent">
@@ -223,12 +220,12 @@ function Row({
             </span>
           ) : null}
         </span>
-        <span className="block text-2xs text-faint">
+        <span className="mt-1 block text-2xs text-faint">
           {correct}/{total} correct · {timeAgo(createdAt)}
         </span>
       </span>
 
-      <span className="shrink-0 font-serif text-lg font-semibold tabular-nums text-accent">
+      <span className="shrink-0 font-serif text-xl font-semibold tabular-nums text-accent">
         {score}
       </span>
     </motion.div>

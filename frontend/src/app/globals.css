@@ -3,55 +3,45 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f4f1e9;
-  --foreground: #191527;
-  --muted: #6a6379;
-  --faint: #8b8498;
+  --background: #f3efe5;
+  --foreground: #171320;
+  --muted: #5f5870;
+  --faint: #8d8698;
 
-  --surface: rgba(255, 253, 249, 0.74);
-  --surface-raised: rgba(255, 254, 251, 0.92);
-  --border: rgba(31, 24, 54, 0.1);
-  --border-strong: rgba(31, 24, 54, 0.16);
-  --highlight: rgba(255, 255, 255, 0.85);
+  --rule: rgba(23, 19, 32, 0.14);
+  --rule-strong: rgba(23, 19, 32, 0.28);
+  --tint: rgba(23, 19, 32, 0.035);
 
-  --shadow: 0 2px 6px -2px rgba(28, 22, 48, 0.1), 0 16px 40px -22px rgba(28, 22, 48, 0.4);
-  --shadow-raised: 0 3px 10px -3px rgba(28, 22, 48, 0.16), 0 24px 56px -26px rgba(28, 22, 48, 0.5);
-
-  --accent: #6b57d6;
+  --accent: #5b45c9;
   --accent-foreground: #ffffff;
-  --accent-ring: rgba(107, 87, 214, 0.34);
-  --gold: #b3813a;
+  --accent-tint: rgba(91, 69, 201, 0.08);
+  --gold: #9c6f2e;
 
-  --correct: #2c7a52;
-  --correct-surface: rgba(44, 122, 82, 0.14);
-  --wrong: #ab3a3a;
-  --wrong-surface: rgba(171, 58, 58, 0.12);
+  --correct: #23694a;
+  --correct-tint: rgba(35, 105, 74, 0.1);
+  --wrong: #a03434;
+  --wrong-tint: rgba(160, 52, 52, 0.09);
 }
 
 .dark {
-  --background: #0a0e1c;
-  --foreground: #ebe8f4;
-  --muted: #9a94b2;
-  --faint: #6f6a86;
+  --background: #0b0d16;
+  --foreground: #eceaf2;
+  --muted: #9b95ab;
+  --faint: #6d6880;
 
-  --surface: rgba(26, 31, 54, 0.6);
-  --surface-raised: rgba(33, 39, 68, 0.82);
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --highlight: rgba(255, 255, 255, 0.07);
+  --rule: rgba(255, 255, 255, 0.13);
+  --rule-strong: rgba(255, 255, 255, 0.26);
+  --tint: rgba(255, 255, 255, 0.045);
 
-  --shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.5), 0 18px 44px -24px rgba(0, 0, 0, 0.9);
-  --shadow-raised: 0 3px 12px -3px rgba(0, 0, 0, 0.6), 0 26px 60px -28px rgba(0, 0, 0, 1);
+  --accent: #b9a6ff;
+  --accent-foreground: #12101c;
+  --accent-tint: rgba(185, 166, 255, 0.12);
+  --gold: #d9ab5f;
 
-  --accent: #b6a4ff;
-  --accent-foreground: #14101f;
-  --accent-ring: rgba(182, 164, 255, 0.4);
-  --gold: #e2b768;
-
-  --correct: #66d7a0;
-  --correct-surface: rgba(102, 215, 160, 0.16);
-  --wrong: #f2908e;
-  --wrong-surface: rgba(242, 144, 142, 0.14);
+  --correct: #6cd7a2;
+  --correct-tint: rgba(108, 215, 162, 0.14);
+  --wrong: #f19291;
+  --wrong-tint: rgba(241, 146, 145, 0.12);
 }
 
 @theme inline {
@@ -64,6 +54,7 @@
   --color-gold: var(--gold);
   --color-correct: var(--correct);
   --color-wrong: var(--wrong);
+  --color-rule: var(--rule);
 
   --font-sans: var(--font-inter);
   --font-serif: var(--font-fraunces);
@@ -75,45 +66,59 @@
   --text-sm: 0.8125rem;
   --text-sm--line-height: 1.5;
   --text-base: 0.9375rem;
-  --text-base--line-height: 1.55;
+  --text-base--line-height: 1.6;
   --text-lg: 1.0625rem;
   --text-lg--line-height: 1.5;
-  --text-xl: 1.25rem;
+  --text-xl: 1.3125rem;
   --text-xl--line-height: 1.4;
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 1.3;
-  --text-3xl: 2rem;
-  --text-3xl--line-height: 1.2;
-  --text-4xl: 2.75rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 1.32;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 1.22;
+  --text-4xl: 2.875rem;
   --text-4xl--line-height: 1.1;
-  --text-5xl: 3.5rem;
+  --text-5xl: 3.75rem;
   --text-5xl--line-height: 1;
 }
 
-@utility glass {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow), inset 0 1px 0 0 var(--highlight);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
+@utility rule-t {
+  border-top: 1px solid var(--rule);
 }
 
-@utility glass-raised {
-  background: var(--surface-raised);
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-raised), inset 0 1px 0 0 var(--highlight);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
+@utility rule-b {
+  border-bottom: 1px solid var(--rule);
 }
 
-@utility hairline {
-  border: 1px solid var(--border);
+@utility panel {
+  border: 1px solid var(--rule);
+  background: var(--tint);
+}
+
+@utility label {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+@utility dropcap {
+  &::first-letter {
+    float: left;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 3.1em;
+    line-height: 0.8;
+    margin-top: 0.06em;
+    padding-right: 0.09em;
+    color: var(--accent);
+  }
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -154,17 +159,11 @@ body::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background:
-    radial-gradient(
-      125vh 95vh at 92% -14%,
-      color-mix(in srgb, var(--gold) 15%, transparent),
-      transparent 68%
-    ),
-    radial-gradient(
-      115vh 85vh at 2% 112%,
-      color-mix(in srgb, var(--accent) 13%, transparent),
-      transparent 68%
-    );
+  background: radial-gradient(
+    130vh 100vh at 96% -18%,
+    color-mix(in srgb, var(--gold) 11%, transparent),
+    transparent 66%
+  );
   transition: opacity 0.45s ease;
 }
 
@@ -174,7 +173,7 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.016;
+  opacity: 0.02;
   background-color: var(--foreground);
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='240'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M28 26h214M28 50h268M28 74h176M28 98h246M28 122h132M28 146h258M28 170h198M28 194h224M28 218h154'/%3E%3C/g%3E%3C/svg%3E");
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='240'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M28 26h214M28 50h268M28 74h176M28 98h246M28 122h132M28 146h258M28 170h198M28 194h224M28 218h154'/%3E%3C/g%3E%3C/svg%3E");
