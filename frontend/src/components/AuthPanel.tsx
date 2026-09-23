@@ -46,7 +46,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
           autoComplete="nickname"
           maxLength={32}
           required
-          className="rounded-xl border border-white/20 bg-white/40 px-4 py-3 text-[15px] outline-none placeholder:text-muted focus:border-accent dark:bg-white/5"
+          className="hairline rounded-xl bg-transparent px-4 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
         />
       ) : null}
 
@@ -57,7 +57,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         placeholder="Email"
         autoComplete="email"
         required
-        className="rounded-xl border border-white/20 bg-white/40 px-4 py-3 text-[15px] outline-none placeholder:text-muted focus:border-accent dark:bg-white/5"
+        className="hairline rounded-xl bg-transparent px-4 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
       />
 
       <input
@@ -67,13 +67,13 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         placeholder={isSignUp ? "Password (8+ characters)" : "Password"}
         autoComplete={isSignUp ? "new-password" : "current-password"}
         required
-        className="rounded-xl border border-white/20 bg-white/40 px-4 py-3 text-[15px] outline-none placeholder:text-muted focus:border-accent dark:bg-white/5"
+        className="hairline rounded-xl bg-transparent px-4 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
       />
 
       <button
         type="submit"
         disabled={busy}
-        className="rounded-xl bg-accent py-3 text-[15px] font-semibold text-accent-foreground transition-opacity disabled:opacity-60"
+        className="rounded-xl bg-accent py-3 text-sm font-semibold uppercase tracking-[0.12em] text-accent-foreground transition-opacity disabled:opacity-60"
       >
         {busy ? "Working…" : isSignUp ? "Create account" : "Sign in"}
       </button>
@@ -81,7 +81,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
       {error ? <p className="text-center text-xs text-wrong">{error}</p> : null}
       {notice ? <p className="text-center text-xs text-accent">{notice}</p> : null}
 
-      <button type="button" onClick={swap} className="py-1 text-center text-[13px] text-muted">
+      <button type="button" onClick={swap} className="py-1 text-center text-xs text-muted">
         {isSignUp ? "Already have an account? Sign in" : "New here? Create an account"}
       </button>
     </motion.form>

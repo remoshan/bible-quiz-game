@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { BackIcon, LaurelIcon } from "@/components/icons";
 import { request } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGameStore, type Difficulty } from "@/store/useGameStore";
@@ -25,8 +26,6 @@ type Loaded = {
   you: Standing | null;
   error: string | null;
 };
-
-const MEDALS = ["🥇", "🥈", "🥉"];
 
 function timeAgo(iso: string) {
   const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -88,17 +87,17 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
   const inTopList = you !== null && entries !== null && entries.some((e) => e.userId === you.userId);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-7 pt-5">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-7 pt-4 sm:max-w-lg">
       <header className="flex items-center justify-between gap-4">
         <button
           type="button"
           onClick={onBack}
-          className="glass flex h-9 w-9 items-center justify-center rounded-full text-sm"
+          className="glass flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:text-foreground"
           aria-label="Back"
         >
-          ←
+          <BackIcon className="h-4 w-4" />
         </button>
-        <h1 className="text-[15px] font-semibold tracking-tight">Leaderboard</h1>
+        <h1 className="font-serif text-lg font-semibold tracking-tight">Leaderboard</h1>
         <span className="h-9 w-9" />
       </header>
 
@@ -111,8 +110,12 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
               key={setting.key}
               type="button"
               onClick={() => setDifficulty(setting.key)}
-              className="glass flex-1 rounded-xl py-2.5 text-[13px] font-medium transition-shadow"
-              style={isActive ? { boxShadow: "0 0 0 2px var(--accent)" } : undefined}
+              className={
+                isActive
+                  ? "glass-raised flex-1 rounded-xl py-2.5 text-xs font-semibold uppercase tracking-[0.1em]"
+                  : "hairline flex-1 rounded-xl bg-transparent py-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted"
+              }
+              style={isActive ? { borderColor: "var(--accent)" } : undefined}
             >
               {setting.label}
             </button>
@@ -120,19 +123,24 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
         })}
       </div>
 
-      <p className="mt-3 text-center text-[11px] text-muted">Each player&rsquo;s best round</p>
+      <p className="mt-3 text-center text-2xs uppercase tracking-[0.16em] text-faint">
+        Each player&rsquo;s best round
+      </p>
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
         {error ? (
           <p className="glass rounded-2xl p-4 text-center text-xs text-wrong">{error}</p>
         ) : null}
 
-        {!entries && !error ? <p className="mt-8 text-center text-xs text-muted">Loading…</p> : null}
+        {!entries && !error ? (
+          <p className="mt-8 text-center text-2xs uppercase tracking-[0.16em] text-faint">Loading</p>
+        ) : null}
 
         {entries?.length === 0 ? (
-          <p className="glass mt-8 rounded-2xl p-6 text-center text-[13px] text-muted">
-            No scores here yet. Be the first.
-          </p>
+          <div className="glass mt-8 flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
+            <LaurelIcon className="h-7 w-7 text-faint" />
+            <p className="text-sm text-muted">No scores here yet. Be the first.</p>
+          </div>
         ) : null}
 
         {entries?.map((entry, position) => (
@@ -195,21 +203,34 @@ function Row({
       className="glass flex items-center gap-3 rounded-2xl px-4 py-3"
       style={isYou ? { boxShadow: "0 0 0 2px var(--accent)" } : undefined}
     >
-      <span className="w-7 shrink-0 text-center text-[13px] font-semibold tabular-nums text-muted">
-        {MEDALS[position - 1] ?? position}
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
+        style={
+          position <= 3
+            ? { color: "var(--gold)", border: "1px solid var(--gold)" }
+            : { color: "var(--faint)", border: "1px solid var(--border)" }
+        }
+      >
+        {position}
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] font-medium">
+        <span className="block truncate font-serif text-base font-semibold">
           {name}
-          {isYou ? <span className="ml-1.5 text-[11px] font-normal text-accent">you</span> : null}
+          {isYou ? (
+            <span className="ml-2 text-2xs font-sans font-medium uppercase tracking-[0.14em] text-accent">
+              you
+            </span>
+          ) : null}
         </span>
-        <span className="block text-[11px] text-muted">
+        <span className="block text-2xs text-faint">
           {correct}/{total} correct · {timeAgo(createdAt)}
         </span>
       </span>
 
-      <span className="shrink-0 text-[15px] font-semibold tabular-nums text-accent">{score}</span>
+      <span className="shrink-0 font-serif text-lg font-semibold tabular-nums text-accent">
+        {score}
+      </span>
     </motion.div>
   );
 }
