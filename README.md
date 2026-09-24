@@ -95,6 +95,33 @@ SQL in `backend/sql/` is applied through the Supabase SQL editor or the Supabase
 | `sql/leaderboard.sql` | Best-score-per-player ranking functions and the unique display name index |
 | `sql/reset-test-data.sql` | Lists every registered player, then deletes them and their scores. Irreversible |
 
+## Backend layers
+
+```
+src/
+  server.ts          wiring: cors, json, routers, error handler
+  routes/            HTTP and request validation only
+  application/       use cases that orchestrate domain + adapters
+  domain/            game rules and the event bus, no I/O
+  infrastructure/    Supabase adapters
+```
+
+Dependencies point inward: `routes` may call `application` or, when there is nothing to orchestrate, `domain` and `infrastructure` directly. `domain` imports nothing from the other layers.
+
+`infrastructure/accounts.ts` keeps its own Supabase client, separate from the shared one in `supabase.ts`. `signInWithPassword` mutates the session on the client it is called against, so sharing a client would downgrade the service role used for every data read.
+
+## Domain events
+
+`domain/events.ts` is a typed wrapper over Node's `EventEmitter` - in process, no broker. The application layer publishes; nothing in `domain/game.ts` knows the bus exists, which keeps the rules pure and testable.
+
+| Event | Published when |
+| --- | --- |
+| `answer.graded` | An answer is accepted, right or wrong |
+| `game.completed` | The last question of a round is answered |
+| `score.saved` | A finished round reaches the leaderboard |
+
+A subscriber that throws is caught and logged, so a broken listener can never fail the request that triggered it. Subscribers live in `application/subscribers.ts` and are registered once at startup.
+
 ## Question bank
 
 `backend/scripts/question-bank.ts` is the source of truth for all 75 questions. `sql/seed.sql` is generated from it and should never be edited by hand.

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch --env-file=.env src/server.ts",
     "start": "node --env-file=.env src/server.ts",
-    "test": "node --test src/*.test.ts",
+    "test": "node --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "verify:questions": "node scripts/verify-questions.ts",
     "seed:write": "node scripts/verify-questions.ts --write"

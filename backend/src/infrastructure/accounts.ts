@@ -1,13 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import { supabase, supabaseKey, supabaseUrl } from "./supabase.ts";
 
-const url = process.env.SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!url || !key) {
-  throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in backend/.env");
-}
-
-const authClient = createClient(url, key, {
+const authClient = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
@@ -120,4 +114,16 @@ export async function userFromToken(accessToken: string): Promise<AuthUser | nul
     email: data.user.email ?? "",
     displayName: data.user.user_metadata?.display_name ?? "Player",
   };
+}
+
+export async function isDisplayNameTaken(displayName: string) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id")
+    .ilike("display_name", displayName.trim())
+    .limit(1);
+
+  if (error) throw new Error(`Display name lookup failed: ${error.message}`);
+
+  return (data ?? []).length > 0;
 }
