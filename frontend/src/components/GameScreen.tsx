@@ -43,58 +43,56 @@ export function GameScreen() {
   if (!question) return null;
 
   return (
-    <main className="mx-auto flex h-dvh w-full max-w-md flex-col px-5 pb-6 pt-4 sm:max-w-2xl">
-      <header className="flex shrink-0 items-center justify-between gap-4">
+    <main className="mx-auto flex h-dvh w-full max-w-md flex-col px-6 pb-6 pt-5 sm:max-w-2xl">
+      <div className="flex shrink-0 items-center">
         <button
           type="button"
           onClick={reset}
-          className="glass flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:text-foreground"
+          className="-ml-1 flex h-8 w-8 items-center justify-center text-faint transition-colors hover:text-foreground"
           aria-label="Quit game"
         >
           <CloseIcon className="h-4 w-4" />
         </button>
+      </div>
 
-        <span className="text-2xs font-medium uppercase tracking-[0.18em] text-faint">
-          Question {index + 1} of {totalQuestions}
-        </span>
-
-        <span className="glass rounded-full px-3 py-1.5 text-xs font-semibold tabular-nums">
-          {score}
-        </span>
-      </header>
-
-      <div className="mt-4 h-1 w-full shrink-0 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+      <div className="mt-3 h-px w-full shrink-0 bg-[var(--rule)]">
         <motion.div
-          className="h-full w-full origin-left rounded-full bg-accent"
+          className="h-px w-full origin-left bg-accent"
           style={{ scaleX: timeLeft }}
         />
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden py-5">
+      <div className="mt-2.5 flex shrink-0 items-baseline justify-between">
+        <span className="label">
+          Question {index + 1} of {totalQuestions}
+        </span>
+        <span className="font-serif text-lg font-semibold tabular-nums">{score}</span>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden py-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={question.id}
-            initial={{ opacity: 0, x: 36 }}
+            initial={{ opacity: 0, x: 28 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -36, transition: { duration: 0.16, ease: "easeIn" } }}
+            exit={{ opacity: 0, x: -28, transition: { duration: 0.16, ease: "easeIn" } }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="glass rounded-3xl px-6 py-7 sm:px-8 sm:py-9"
           >
-            <span className="text-2xs font-semibold uppercase tracking-[0.2em] text-gold">
+            <span className="label" style={{ color: "var(--gold)" }}>
               {TYPE_LABELS[question.type] ?? question.type}
             </span>
 
-            <p className="mt-3 text-balance font-serif text-xl font-medium leading-snug sm:text-2xl">
+            <p className="dropcap mt-4 text-balance font-serif text-2xl leading-snug sm:text-3xl">
               {question.verse_text}
             </p>
 
-            <p className="mt-4 text-sm text-muted">{question.prompt}</p>
+            <p className="mt-5 text-sm text-muted">{question.prompt}</p>
 
             {reference ? (
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mt-2 text-sm font-semibold text-accent"
+                className="mt-2 font-serif text-sm font-semibold text-accent"
               >
                 {reference} &middot; {question.translation}
               </motion.p>
@@ -103,36 +101,42 @@ export function GameScreen() {
         </AnimatePresence>
       </div>
 
-      <div className="grid shrink-0 grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <ul className="shrink-0 sm:grid sm:grid-cols-2 sm:gap-x-6">
         {question.options.map((option, i) => {
           const isCorrect = i === correctIndex;
           const isPicked = i === selected;
 
           const revealStyle = isRevealed
             ? isCorrect
-              ? { background: "var(--correct-surface)", borderColor: "var(--correct)" }
+              ? {
+                  background: "var(--correct-tint)",
+                  boxShadow: "inset 2px 0 0 0 var(--correct)",
+                  color: "var(--correct)",
+                }
               : isPicked
-                ? { background: "var(--wrong-surface)", borderColor: "var(--wrong)" }
+                ? {
+                    background: "var(--wrong-tint)",
+                    boxShadow: "inset 2px 0 0 0 var(--wrong)",
+                    color: "var(--wrong)",
+                  }
                 : { opacity: 0.4 }
             : undefined;
 
           return (
-            <motion.button
-              key={option}
-              type="button"
-              disabled={isRevealed}
-              whileTap={{ scale: 0.985 }}
-              animate={{ scale: isRevealed && (isCorrect || isPicked) ? 1.02 : 1 }}
-              transition={{ type: "spring", stiffness: 500, damping: 16 }}
-              onClick={() => void answer(i)}
-              className="hairline rounded-2xl bg-transparent px-5 py-3.5 text-left text-base font-medium transition-colors"
-              style={revealStyle}
-            >
-              {option}
-            </motion.button>
+            <li key={option} className="rule-t last:rule-b sm:last:border-b-0 sm:[&:nth-child(3)]:rule-t">
+              <button
+                type="button"
+                disabled={isRevealed}
+                onClick={() => void answer(i)}
+                className="w-full py-3.5 pl-3 pr-1 text-left text-base transition-colors active:bg-[var(--tint)]"
+                style={revealStyle}
+              >
+                {option}
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </main>
   );
 }

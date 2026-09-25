@@ -13,7 +13,7 @@ create table public.questions (
   prompt text not null,
   verse_text text not null,
   reference text not null,
-  translation text not null default 'NIV',
+  translation text not null default 'CPDV',
   options text[] not null check (array_length(options, 1) = 4),
   correct_index smallint not null check (correct_index between 0 and 3),
   created_at timestamptz not null default now()

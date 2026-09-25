@@ -1,17 +1,11 @@
 "use client";
 
-import { useEffect, useState, type ComponentType } from "react";
-import { AuthPanel } from "@/components/AuthPanel";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowRightIcon, SaplingIcon, SeedIcon, ShieldIcon, TreeIcon } from "@/components/icons";
+import { useEffect, useState } from "react";
+import { ArrowRightIcon, IlluminatedInitial, OrnamentIcon } from "@/components/icons";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGameStore, type Difficulty } from "@/store/useGameStore";
 
-const DIFFICULTY_ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  easy: SeedIcon,
-  medium: SaplingIcon,
-  hard: TreeIcon,
-};
+const NUMERALS = ["I", "II", "III", "IV", "V"];
 
 function initialsOf(name: string) {
   return name
@@ -22,7 +16,13 @@ function initialsOf(name: string) {
     .join("");
 }
 
-export function HomeScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => void }) {
+export function HomeScreen({
+  onOpenLeaderboard,
+  onOpenSignIn,
+}: {
+  onOpenLeaderboard: () => void;
+  onOpenSignIn: () => void;
+}) {
   const status = useGameStore((s) => s.status);
   const error = useGameStore((s) => s.error);
   const start = useGameStore((s) => s.start);
@@ -33,7 +33,6 @@ export function HomeScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => voi
   const signOut = useAuthStore((s) => s.signOut);
 
   const [choice, setChoice] = useState<Difficulty | null>(null);
-  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     void loadDifficulties();
@@ -43,91 +42,74 @@ export function HomeScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => voi
   const active = choice ?? difficulties[1]?.key ?? difficulties[0]?.key ?? null;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-6 pt-4 lg:max-w-5xl lg:px-10">
-      <header className="flex shrink-0 items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-serif text-lg font-semibold leading-none tracking-tight">Verse</p>
-          <p className="mt-1 text-2xs font-medium uppercase tracking-[0.18em] text-faint">
-            The Daily Word Quiz
-          </p>
-        </div>
-
-        <ShieldIcon className="h-7 w-7 shrink-0 text-gold" />
-
-        <div className="flex shrink-0 items-center gap-2">
-          {session ? (
-            <span
-              title={session.user.displayName}
-              className="glass flex h-9 w-9 items-center justify-center rounded-full text-2xs font-semibold tracking-wide"
-            >
-              {initialsOf(session.user.displayName)}
-            </span>
-          ) : null}
-          <ThemeToggle />
-        </div>
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 lg:max-w-4xl lg:px-12">
+      <header className="rise shrink-0">
+        <h1 className="font-serif text-2xl font-semibold leading-none tracking-tight lg:text-3xl">
+          Verse
+        </h1>
+        <p className="label mt-2">A Catholic Bible Quiz Game</p>
       </header>
 
-      <div className="flex flex-1 flex-col lg:flex-row lg:items-center lg:gap-14">
-        <section className="flex flex-1 flex-col justify-center py-6 lg:py-0">
-          <div className="rise glass rounded-3xl p-3 lg:p-4" style={{ animationDelay: "60ms" }}>
-            <div className="flex flex-col gap-2">
-              {difficulties.map((setting) => {
-                const Icon = DIFFICULTY_ICONS[setting.key] ?? SeedIcon;
-                const isActive = setting.key === active;
-
-                return (
-                  <button
-                    key={setting.key}
-                    type="button"
-                    onClick={() => setChoice(setting.key)}
-                    aria-pressed={isActive}
-                    className={
-                      isActive
-                        ? "glass-raised flex translate-x-1.5 items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-transform duration-300 ease-out active:scale-[0.99]"
-                        : "hairline flex items-center gap-4 rounded-2xl bg-transparent px-4 py-3.5 text-left transition-transform duration-300 ease-out active:scale-[0.99]"
-                    }
-                    style={
-                      isActive
-                        ? {
-                            borderColor: "var(--accent)",
-                            boxShadow: "var(--shadow-raised), 0 0 0 4px var(--accent-ring)",
-                          }
-                        : undefined
-                    }
-                  >
-                    <Icon
-                      className={
-                        isActive ? "h-7 w-7 shrink-0 text-accent" : "h-7 w-7 shrink-0 text-faint"
-                      }
-                    />
-
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-serif text-lg font-semibold leading-tight">
-                        {setting.label}
-                      </span>
-                      <span className="block text-xs text-muted">
-                        {setting.questions} questions &middot; {setting.seconds}s each
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
+      <div className="flex flex-1 flex-col lg:flex-row lg:items-center lg:gap-16">
+        <section className="flex flex-1 flex-col justify-center py-8 lg:py-12">
           <p
-            className="rise mt-5 text-center text-sm text-muted lg:text-left"
-            style={{ animationDelay: "130ms" }}
+            className="rise max-w-sm text-base leading-relaxed text-muted"
+            style={{ animationDelay: "60ms" }}
           >
             Test your knowledge of Scripture in daily rounds of increasing challenge.
           </p>
 
-          <div className="rise mt-5 flex flex-col gap-2.5" style={{ animationDelay: "200ms" }}>
+          <p className="rise label mt-10" style={{ animationDelay: "120ms" }}>
+            Choose your round
+          </p>
+
+          <ul className="rise mt-3" style={{ animationDelay: "160ms" }}>
+            {difficulties.map((setting, position) => {
+              const isActive = setting.key === active;
+
+              return (
+                <li key={setting.key} className="rule-t last:rule-b">
+                  <button
+                    type="button"
+                    onClick={() => setChoice(setting.key)}
+                    aria-pressed={isActive}
+                    className="flex w-full items-baseline gap-5 py-4 pl-3 pr-1 text-left transition-colors"
+                    style={
+                      isActive
+                        ? {
+                            background: "var(--accent-tint)",
+                            boxShadow: "inset 2px 0 0 0 var(--accent)",
+                          }
+                        : undefined
+                    }
+                  >
+                    <span
+                      className="w-7 shrink-0 font-serif text-lg"
+                      style={{ color: isActive ? "var(--accent)" : "var(--faint)" }}
+                    >
+                      {NUMERALS[position]}
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-serif text-2xl font-semibold leading-none">
+                        {setting.label}
+                      </span>
+                      <span className="mt-1.5 block text-xs text-faint">
+                        {setting.questions} questions &middot; {setting.seconds} seconds each
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="rise mt-10 flex flex-col gap-3" style={{ animationDelay: "220ms" }}>
             <button
               type="button"
               disabled={isLoading || !active}
               onClick={() => active && start(active)}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-accent py-4 text-sm font-semibold uppercase tracking-[0.12em] text-accent-foreground transition-transform duration-200 active:scale-[0.99] disabled:opacity-60"
+              className="flex items-center justify-between gap-2 bg-accent px-6 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground transition-opacity disabled:opacity-50"
             >
               {isLoading ? "Gathering verses" : "Play now"}
               {isLoading ? null : <ArrowRightIcon className="h-4 w-4" />}
@@ -136,60 +118,61 @@ export function HomeScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => voi
             <button
               type="button"
               onClick={onOpenLeaderboard}
-              className="hairline rounded-2xl bg-transparent py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-foreground transition-colors"
+              className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em] text-foreground transition-colors hover:border-[var(--rule-strong)]"
             >
               Leaderboard
             </button>
           </div>
 
-          <div className="rise mt-4 flex flex-col gap-2.5" style={{ animationDelay: "270ms" }}>
+          <div className="rise mt-8 flex flex-col gap-3" style={{ animationDelay: "280ms" }}>
             {session ? (
-              <p className="text-center text-xs text-muted">
-                Signed in as{" "}
-                <span className="font-medium text-foreground">{session.user.displayName}</span>
-                {" · "}
-                <button type="button" onClick={signOut} className="underline underline-offset-4">
+              <p className="flex items-center gap-2.5 text-xs text-muted">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-rule text-2xs font-semibold">
+                  {initialsOf(session.user.displayName)}
+                </span>
+                <span>
+                  Signed in as{" "}
+                  <span className="font-medium text-foreground">{session.user.displayName}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="ml-auto underline underline-offset-4 hover:text-foreground"
+                >
                   Sign out
                 </button>
               </p>
             ) : (
               <button
                 type="button"
-                onClick={() => setShowAuth((open) => !open)}
-                className="text-center text-xs text-muted underline decoration-faint underline-offset-4"
+                onClick={onOpenSignIn}
+                className="text-left text-xs text-muted underline decoration-[var(--rule-strong)] underline-offset-4 hover:text-foreground"
               >
-                {showAuth ? "Maybe later" : "Sign in to save your scores"}
+                Sign in to save your scores
               </button>
             )}
 
-            {!session && showAuth ? <AuthPanel onSuccess={() => setShowAuth(false)} /> : null}
-
             {error ? (
-              <p className="glass rounded-2xl px-4 py-3 text-center text-xs text-wrong">{error}</p>
+              <p className="border border-rule px-4 py-3 text-xs text-wrong">{error}</p>
             ) : null}
           </div>
         </section>
 
         <aside
-          className="rise hidden lg:flex lg:w-[22rem] lg:shrink-0 lg:flex-col lg:justify-center"
+          className="rise hidden lg:flex lg:w-80 lg:shrink-0 lg:flex-col lg:items-start lg:justify-center"
           style={{ animationDelay: "40ms" }}
         >
-          <ShieldIcon className="h-12 w-12 text-gold" />
-          <h1 className="mt-6 font-serif text-5xl font-semibold leading-none tracking-tight">
-            Verse
-          </h1>
-          <p className="mt-3 text-2xs font-medium uppercase tracking-[0.22em] text-faint">
-            The Daily Word Quiz
+          <IlluminatedInitial className="h-24 w-24 text-gold" />
+          <p className="mt-8 max-w-xs font-serif text-xl leading-snug text-muted">
+            Three rounds, drawn from the whole of Scripture. One question at a time, and a clock
+            that does not wait.
           </p>
-          <p className="mt-6 max-w-xs text-base leading-relaxed text-muted">
-            Three rounds. Ninety seconds of thinking. One question at a time, drawn from the whole
-            of Scripture.
-          </p>
+          <OrnamentIcon className="mt-8 h-4 w-32 text-faint" />
         </aside>
       </div>
 
-      <footer className="shrink-0 pt-2 text-center text-2xs text-faint lg:text-left">
-        Scripture quoted from the New International Version
+      <footer className="rule-t shrink-0 pt-4 text-2xs text-faint">
+        Scripture from the Catholic Public Domain Version
       </footer>
     </main>
   );

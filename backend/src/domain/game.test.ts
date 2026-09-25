@@ -20,7 +20,7 @@ function makeQuestions(count: number): StoredQuestion[] {
     prompt: "Which book?",
     verse_text: `verse ${i}`,
     reference: `Book ${i}:1`,
-    translation: "NIV",
+    translation: "CPDV",
     options: ["a", "b", "c", "d"],
     correct_index: 2,
   }));

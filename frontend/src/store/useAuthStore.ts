@@ -2,13 +2,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { request } from "@/lib/api";
 
-export type AuthUser = {
+type AuthUser = {
   id: string;
   email: string;
   displayName: string;
 };
 
-export type Session = {
+type Session = {
   accessToken: string;
   refreshToken: string;
   expiresAt: number;
