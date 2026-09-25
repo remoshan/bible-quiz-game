@@ -7,7 +7,10 @@ import { gameRoutes } from "./routes/games.ts";
 import { leaderboardRoutes } from "./routes/leaderboard.ts";
 
 const port = Number(process.env.PORT ?? 4000);
-const origin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
+const origin = (process.env.CORS_ORIGIN ?? "http://localhost:3000")
+  .split(",")
+  .map((entry) => entry.trim())
+  .filter(Boolean);
 
 registerSubscribers();
 
