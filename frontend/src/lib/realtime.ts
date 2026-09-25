@@ -1,37 +1,26 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { RealtimeClient } from "@supabase/realtime-js";
 
-const LEADERBOARD_TOPIC = "leaderboard";
-const SCORE_EVENT = "score";
+const TOPIC = "leaderboard";
+const EVENT = "score";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const apikey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-let client: SupabaseClient | null = null;
-
-function realtimeClient() {
-  if (!url || !anonKey) return null;
-
-  client ??= createClient(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  return client;
-}
+let client: RealtimeClient | null = null;
 
 export function onScoreSaved(handler: (difficulty: string) => void) {
-  const supabase = realtimeClient();
+  if (!url || !apikey) return () => {};
 
-  if (!supabase) return () => {};
+  client ??= new RealtimeClient(`${url}/realtime/v1`, { params: { apikey } });
 
-  const channel = supabase
-    .channel(LEADERBOARD_TOPIC)
-    .on("broadcast", { event: SCORE_EVENT }, ({ payload }) => {
-      const difficulty = (payload as { difficulty?: unknown })?.difficulty;
-      if (typeof difficulty === "string") handler(difficulty);
+  const channel = client
+    .channel(TOPIC)
+    .on("broadcast", { event: EVENT }, ({ payload }: { payload: { difficulty?: unknown } }) => {
+      if (typeof payload?.difficulty === "string") handler(payload.difficulty);
     })
     .subscribe();
 
   return () => {
-    void supabase.removeChannel(channel);
+    void channel.unsubscribe();
   };
 }

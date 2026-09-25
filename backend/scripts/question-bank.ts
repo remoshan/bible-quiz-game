@@ -1,4 +1,4 @@
-export type QuestionType = "guess_the_book" | "fill_in_the_blank" | "who_said_it";
+type QuestionType = "guess_the_book" | "fill_in_the_blank" | "who_said_it";
 
 export type Difficulty = "easy" | "medium" | "hard";
 

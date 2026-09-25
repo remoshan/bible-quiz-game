@@ -10,7 +10,7 @@ const cacheFile = join(here, "..", ".cache", "cpdv.json");
 
 export type Bible = Record<string, Record<string, Record<string, string>>>;
 
-export type Reference = {
+type Reference = {
   bookKey: string;
   book: string;
   chapter: string;

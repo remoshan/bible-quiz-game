@@ -75,8 +75,6 @@
   --text-2xl--line-height: 1.32;
   --text-3xl: 2.125rem;
   --text-3xl--line-height: 1.22;
-  --text-4xl: 2.875rem;
-  --text-4xl--line-height: 1.1;
   --text-5xl: 3.75rem;
   --text-5xl--line-height: 1;
 }
@@ -87,11 +85,6 @@
 
 @utility rule-b {
   border-bottom: 1px solid var(--rule);
-}
-
-@utility panel {
-  border: 1px solid var(--rule);
-  background: var(--tint);
 }
 
 @utility label {

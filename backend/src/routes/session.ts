@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { userFromToken, type AuthUser } from "../infrastructure/accounts.ts";
 
-export function bearerToken(req: Request) {
+function bearerToken(req: Request) {
   const header = req.headers.authorization;
   return header?.startsWith("Bearer ") ? header.slice(7).trim() : null;
 }

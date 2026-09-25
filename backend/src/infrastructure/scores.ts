@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.ts";
 
-export type ScoreRow = {
+type ScoreRow = {
   user_id: string;
   difficulty: string;
   score: number;
@@ -9,7 +9,7 @@ export type ScoreRow = {
   duration_ms: number;
 };
 
-export type LeaderboardEntry = {
+type LeaderboardEntry = {
   id: string;
   userId: string;
   displayName: string;
@@ -20,7 +20,7 @@ export type LeaderboardEntry = {
   createdAt: string;
 };
 
-export type PlayerStanding = {
+type PlayerStanding = {
   rank: number;
   score: number;
   correctAnswers: number;

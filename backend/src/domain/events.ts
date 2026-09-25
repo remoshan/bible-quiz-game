@@ -22,7 +22,7 @@ export type DomainEvents = {
   };
 };
 
-export type DomainEvent = keyof DomainEvents;
+type DomainEvent = keyof DomainEvents;
 
 const emitter = new EventEmitter();
 

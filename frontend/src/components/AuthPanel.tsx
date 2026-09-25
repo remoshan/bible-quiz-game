@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
@@ -13,6 +12,9 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
   const [displayName, setDisplayName] = useState("");
 
   const isSignUp = mode === "signup";
+
+  const field =
+    "border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent";
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -30,13 +32,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <motion.form
-      onSubmit={submit}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 280, damping: 26 }}
-      className="flex flex-col gap-2.5"
-    >
+    <form onSubmit={submit} className="rise flex flex-col gap-2.5">
       {isSignUp ? (
         <input
           type="text"
@@ -46,7 +42,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
           autoComplete="nickname"
           maxLength={32}
           required
-          className="border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
+          className={field}
         />
       ) : null}
 
@@ -57,7 +53,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         placeholder="Email"
         autoComplete="email"
         required
-        className="border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
+        className={field}
       />
 
       <input
@@ -67,7 +63,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         placeholder={isSignUp ? "Password (8+ characters)" : "Password"}
         autoComplete={isSignUp ? "new-password" : "current-password"}
         required
-        className="border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent"
+        className={field}
       />
 
       <button
@@ -84,6 +80,6 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
       <button type="button" onClick={swap} className="py-1 text-center text-xs text-muted">
         {isSignUp ? "Already have an account? Sign in" : "New here? Create an account"}
       </button>
-    </motion.form>
+    </form>
   );
 }

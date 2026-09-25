@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { AuthScreen } from "@/components/AuthScreen";
+import dynamic from "next/dynamic";
 import { GameScreen } from "@/components/GameScreen";
 import { HomeScreen } from "@/components/HomeScreen";
-import { LeaderboardScreen } from "@/components/LeaderboardScreen";
 import { ResultsScreen } from "@/components/ResultsScreen";
 import { ThemeControl } from "@/components/ThemeControl";
 import { useGameStore } from "@/store/useGameStore";
+
+const LeaderboardScreen = dynamic(
+  () => import("@/components/LeaderboardScreen").then((m) => m.LeaderboardScreen),
+  { ssr: false }
+);
+
+const AuthScreen = dynamic(() => import("@/components/AuthScreen").then((m) => m.AuthScreen), {
+  ssr: false,
+});
 
 type Overlay = "leaderboard" | "signin" | null;
 

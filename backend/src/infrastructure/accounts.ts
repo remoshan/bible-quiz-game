@@ -15,14 +15,14 @@ export type AuthUser = {
   displayName: string;
 };
 
-export type AuthSession = {
+type AuthSession = {
   accessToken: string;
   refreshToken: string;
   expiresAt: number;
   user: AuthUser;
 };
 
-export type AuthResult =
+type AuthResult =
   | { ok: true; session: AuthSession | null; requiresConfirmation: boolean }
   | { ok: false; message: string };
 

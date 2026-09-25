@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 export type Difficulty = "easy" | "medium" | "hard";
 
-export type DifficultySetting = {
+type DifficultySetting = {
   key: Difficulty;
   label: string;
   questions: number;
@@ -35,7 +35,7 @@ export type StoredQuestion = {
   correct_index: number;
 };
 
-export type PublicQuestion = {
+type PublicQuestion = {
   id: string;
   type: string;
   prompt: string;
@@ -146,7 +146,7 @@ export function createSession(difficulty: Difficulty, questions: StoredQuestion[
   };
 }
 
-export type AnswerOutcome =
+type AnswerOutcome =
   | { ok: false; reason: "not_found" | "already_finished" | "out_of_sync" }
   | {
       ok: true;
@@ -227,7 +227,7 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
   };
 }
 
-export type SavableResult =
+type SavableResult =
   | { ok: true; summary: GameSummary }
   | { ok: false; reason: "not_found" | "not_finished" | "already_saved" };
 

@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 
 export type Difficulty = "easy" | "medium" | "hard";
 
-export type DifficultySetting = {
+type DifficultySetting = {
   key: Difficulty;
   label: string;
   questions: number;
@@ -20,7 +20,7 @@ export type Question = {
   options: string[];
 };
 
-export type Summary = {
+type Summary = {
   score: number;
   correctAnswers: number;
   totalQuestions: number;
@@ -28,9 +28,9 @@ export type Summary = {
   difficulty: Difficulty;
 };
 
-export type GameStatus = "idle" | "loading" | "playing" | "game_over";
+type GameStatus = "idle" | "loading" | "playing" | "game_over";
 
-export type SaveState = "idle" | "saving" | "saved" | "failed";
+type SaveState = "idle" | "saving" | "saved" | "failed";
 
 type GameState = {
   status: GameStatus;
@@ -39,13 +39,11 @@ type GameState = {
   gameId: string | null;
   difficulty: Difficulty | null;
   totalQuestions: number;
-  secondsPerQuestion: number;
   revealMs: number;
   index: number;
   question: Question | null;
   deadline: number;
   score: number;
-  correctAnswers: number;
   selected: number | null;
   correctIndex: number | null;
   reference: string | null;
@@ -64,13 +62,11 @@ const initialGame = {
   gameId: null,
   difficulty: null,
   totalQuestions: 0,
-  secondsPerQuestion: 0,
   revealMs: 1000,
   index: 0,
   question: null,
   deadline: 0,
   score: 0,
-  correctAnswers: 0,
   selected: null,
   correctIndex: null,
   reference: null,
@@ -153,7 +149,6 @@ export const useGameStore = create<GameState>((set, get) => {
           status: "playing",
           gameId: game.gameId,
           totalQuestions: game.totalQuestions,
-          secondsPerQuestion: game.secondsPerQuestion,
           revealMs: game.revealMs,
           index: game.index,
           question: game.question,
@@ -187,7 +182,6 @@ export const useGameStore = create<GameState>((set, get) => {
           correctIndex: outcome.correctIndex,
           reference: outcome.reference,
           score: outcome.score,
-          correctAnswers: outcome.correctAnswers,
         });
 
         revealTimer = setTimeout(() => {

@@ -12,50 +12,6 @@ const base = {
   "aria-hidden": true,
 };
 
-export function SeedIcon({ className }: IconProps) {
-  return (
-    <svg {...base} className={className}>
-      <path d="M12 21.4c-2.4 0-4.3-1.7-4.3-3.8S9.6 13.8 12 13.8s4.3 1.7 4.3 3.8-1.9 3.8-4.3 3.8Z" />
-      <path d="M12 13.8V9.2" />
-      <path d="M12 9.6c0-2.3 1.8-4 4.1-4.2.2 2.3-1.8 4.2-4.1 4.2Z" />
-    </svg>
-  );
-}
-
-export function SaplingIcon({ className }: IconProps) {
-  return (
-    <svg {...base} className={className}>
-      <path d="M12 21.2V8.4" />
-      <path d="M12 12.2c0-3 2.1-5.3 5.1-5.5.2 3-2.1 5.5-5.1 5.5Z" />
-      <path d="M12 16c-2.6 0-4.5-2.1-4.3-4.7 2.4.3 4.1 2.2 4.3 4.7Z" />
-      <path d="M8.6 21.2h6.8" />
-    </svg>
-  );
-}
-
-export function TreeIcon({ className }: IconProps) {
-  return (
-    <svg {...base} className={className}>
-      <path d="M12 2.6 7.4 8.8h9.2L12 2.6Z" />
-      <path d="M12 7.2 5.6 15.4h12.8L12 7.2Z" />
-      <path d="M12 15.4v3" />
-      <path d="M12 18.4c-1.8.4-3 1.5-3.6 3.2" />
-      <path d="M12 18.4c1.8.4 3 1.5 3.6 3.2" />
-      <path d="M12 18.4v3.2" />
-    </svg>
-  );
-}
-
-export function ShieldIcon({ className }: IconProps) {
-  return (
-    <svg {...base} className={className}>
-      <path d="M12 2.8 19 5.4v5.9c0 4.3-2.8 8-7 9.9-4.2-1.9-7-5.6-7-9.9V5.4l7-2.6Z" />
-      <path d="M12 8.2v6.4" />
-      <path d="M9.6 10.6h4.8" />
-    </svg>
-  );
-}
-
 export function SunIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

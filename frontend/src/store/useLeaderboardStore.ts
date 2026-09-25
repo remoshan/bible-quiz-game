@@ -3,7 +3,7 @@ import { request } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { type Difficulty } from "@/store/useGameStore";
 
-export type Entry = {
+type Entry = {
   id: string;
   userId: string;
   displayName: string;
@@ -14,7 +14,7 @@ export type Entry = {
   createdAt: string;
 };
 
-export type Standing = Omit<Entry, "id"> & { rank: number };
+type Standing = Omit<Entry, "id"> & { rank: number };
 
 type LeaderboardState = {
   difficulty: Difficulty;
