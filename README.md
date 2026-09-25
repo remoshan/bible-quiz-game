@@ -54,11 +54,15 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-`frontend/.env` — the only variable the UI needs:
+`frontend/.env` — public by design, all of it reaches the browser:
 
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
+
+The two Supabase values drive the realtime leaderboard only. The anon key is meant to be public: `sql/lockdown.sql` revokes its access to `questions` and `get_quiz`, and the leaderboard's readable-by-everyone policy is deliberate. Leave them blank and the app still runs, with a leaderboard that refreshes on load instead of live.
 
 ## API
 
@@ -121,6 +125,12 @@ Dependencies point inward: `routes` may call `application` or, when there is not
 | `score.saved` | A finished round reaches the leaderboard |
 
 A subscriber that throws is caught and logged, so a broken listener can never fail the request that triggered it. Subscribers live in `application/subscribers.ts` and are registered once at startup.
+
+## Realtime leaderboard
+
+Saving a score publishes `score.saved`; a subscriber posts a Supabase Realtime broadcast to the `leaderboard` topic carrying `{ difficulty }` and nothing else. The channel is public, so the payload deliberately holds no player data.
+
+Browsers watching the leaderboard treat that broadcast purely as a nudge: they refetch `GET /api/leaderboard`, so the backend stays the only source of data and the ranking stays de-duplicated. `frontend/src/lib/realtime.ts` exports `onScoreSaved` and never exports the client itself, so the browser cannot read a table even by accident.
 
 ## Question bank
 

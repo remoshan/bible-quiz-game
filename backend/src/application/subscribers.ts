@@ -1,4 +1,5 @@
 import { subscribe } from "../domain/events.ts";
+import { announceScore } from "../infrastructure/realtime.ts";
 
 export function registerSubscribers() {
   subscribe("game.completed", ({ gameId, summary }) => {
@@ -13,5 +14,11 @@ export function registerSubscribers() {
       `score.saved ${displayName} ${summary.difficulty} ${summary.score} points ` +
         `rank ${rank ?? "unranked"}`
     );
+  });
+
+  subscribe("score.saved", ({ summary }) => {
+    announceScore(summary.difficulty).catch((error) => {
+      console.error("Leaderboard broadcast failed:", error);
+    });
   });
 }

@@ -1,31 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { BackIcon, LaurelIcon } from "@/components/icons";
-import { request } from "@/lib/api";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useGameStore, type Difficulty } from "@/store/useGameStore";
-
-type Entry = {
-  id: string;
-  userId: string;
-  displayName: string;
-  score: number;
-  correctAnswers: number;
-  totalQuestions: number;
-  durationMs: number;
-  createdAt: string;
-};
-
-type Standing = Omit<Entry, "id"> & { rank: number };
-
-type Loaded = {
-  difficulty: Difficulty;
-  entries: Entry[];
-  you: Standing | null;
-  error: string | null;
-};
+import { onScoreSaved } from "@/lib/realtime";
+import { useGameStore } from "@/store/useGameStore";
+import { useLeaderboardStore } from "@/store/useLeaderboardStore";
 
 function timeAgo(iso: string) {
   const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -40,49 +20,27 @@ function timeAgo(iso: string) {
 
 export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
   const difficulties = useGameStore((s) => s.difficulties);
-  const session = useAuthStore((s) => s.session);
-  const accessToken = useAuthStore((s) => s.accessToken);
 
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
-  const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const difficulty = useLeaderboardStore((s) => s.difficulty);
+  const entries = useLeaderboardStore((s) => s.entries);
+  const you = useLeaderboardStore((s) => s.you);
+  const error = useLeaderboardStore((s) => s.error);
+  const live = useLeaderboardStore((s) => s.live);
+  const highlighted = useLeaderboardStore((s) => s.highlighted);
+  const setDifficulty = useLeaderboardStore((s) => s.setDifficulty);
+  const load = useLeaderboardStore((s) => s.load);
 
   useEffect(() => {
-    let active = true;
+    void load(false);
+  }, [difficulty, load]);
 
-    const load = async () => {
-      const token = session ? await accessToken() : null;
-
-      try {
-        const body = await request(`/api/leaderboard?difficulty=${difficulty}&limit=20`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
-
-        if (active) {
-          setLoaded({ difficulty, entries: body.entries, you: body.you, error: null });
-        }
-      } catch {
-        if (active) {
-          setLoaded({
-            difficulty,
-            entries: [],
-            you: null,
-            error: "Could not load the leaderboard.",
-          });
-        }
-      }
-    };
-
-    void load();
-
-    return () => {
-      active = false;
-    };
-  }, [difficulty, session, accessToken]);
-
-  const current = loaded?.difficulty === difficulty ? loaded : null;
-  const entries = current?.entries ?? null;
-  const you = current?.you ?? null;
-  const error = current?.error ?? null;
+  useEffect(
+    () =>
+      onScoreSaved((changed) => {
+        if (changed === difficulty) void load(true);
+      }),
+    [difficulty, load]
+  );
 
   const inTopList = you !== null && entries !== null && entries.some((e) => e.userId === you.userId);
 
@@ -125,13 +83,9 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
       <p className="label mt-5">Each player&rsquo;s best round</p>
 
       <div className="mt-3 flex flex-1 flex-col">
-        {error ? (
-          <p className="border border-rule p-4 text-xs text-wrong">{error}</p>
-        ) : null}
+        {error ? <p className="border border-rule p-4 text-xs text-wrong">{error}</p> : null}
 
-        {!entries && !error ? (
-          <p className="label mt-10">Loading</p>
-        ) : null}
+        {!entries && !error ? <p className="label mt-10">Loading</p> : null}
 
         {entries?.length === 0 ? (
           <div className="mt-12 flex flex-col items-start gap-4">
@@ -140,19 +94,22 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
           </div>
         ) : null}
 
-        {entries?.map((entry, position) => (
-          <Row
-            key={entry.id}
-            position={position + 1}
-            name={entry.displayName}
-            score={entry.score}
-            correct={entry.correctAnswers}
-            total={entry.totalQuestions}
-            createdAt={entry.createdAt}
-            isYou={you !== null && entry.userId === you.userId}
-            delay={Math.min(position * 0.03, 0.3)}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {entries?.map((entry, position) => (
+            <Row
+              key={entry.id}
+              position={position + 1}
+              name={entry.displayName}
+              score={entry.score}
+              correct={entry.correctAnswers}
+              total={entry.totalQuestions}
+              createdAt={entry.createdAt}
+              isYou={you !== null && entry.userId === you.userId}
+              isNew={highlighted.includes(entry.id)}
+              delay={live ? 0 : Math.min(position * 0.03, 0.3)}
+            />
+          ))}
+        </AnimatePresence>
 
         {you && !inTopList ? (
           <div className="rule-t mt-4 pt-4">
@@ -164,6 +121,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
               total={you.totalQuestions}
               createdAt={you.createdAt}
               isYou
+              isNew={false}
               delay={0}
             />
           </div>
@@ -181,6 +139,7 @@ function Row({
   total,
   createdAt,
   isYou,
+  isNew,
   delay,
 }: {
   position: number;
@@ -190,17 +149,25 @@ function Row({
   total: number;
   createdAt: string;
   isYou: boolean;
+  isNew: boolean;
   delay: number;
 }) {
+  const accent = isNew || isYou;
+
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="rule-t flex items-center gap-4 py-3.5 pl-3 pr-1 last:rule-b"
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ delay, layout: { type: "spring", stiffness: 420, damping: 38 } }}
+      className="rule-t flex items-center gap-4 py-3.5 pl-3 pr-1 transition-colors duration-700 last:rule-b"
       style={
-        isYou
-          ? { background: "var(--accent-tint)", boxShadow: "inset 2px 0 0 0 var(--accent)" }
+        accent
+          ? {
+              background: "var(--accent-tint)",
+              boxShadow: `inset ${isYou ? 2 : 3}px 0 0 0 var(--accent)`,
+            }
           : undefined
       }
     >
@@ -221,7 +188,7 @@ function Row({
           ) : null}
         </span>
         <span className="mt-1 block text-2xs text-faint">
-          {correct}/{total} correct · {timeAgo(createdAt)}
+          {correct}/{total} correct &middot; {timeAgo(createdAt)}
         </span>
       </span>
 
