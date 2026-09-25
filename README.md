@@ -4,9 +4,10 @@ A responsive Catholic Bible quiz where every rule, answer and score lives on the
 the browser is only ever a renderer. Scripture is quoted from the Catholic Public Domain
 Version (CPDV) — public domain, and the full 73-book canon.
 
-**Live at [verse.vercel.app](https://verse.vercel.app)** — the UI is hosted on Vercel, and
-the API runs as a single always-on process on a container host, because in-flight rounds are
-held in memory.
+**Live at [verse-bible-quiz.vercel.app](https://verse-bible-quiz.vercel.app)**
+
+The UI is hosted on Vercel and the API runs as a single always-on process on a container
+host, because in-flight rounds are held in memory.
 
 ---
 
