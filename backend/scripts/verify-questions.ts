@@ -58,7 +58,7 @@ function buildRow(bible: Bible, spec: QuestionSpec): Row {
     check(spec.blank === spec.answer, `${label}: the blank and the answer must be the same words`);
 
     if (spec.blank) {
-      const at = verse.indexOf(spec.blank);
+      const at = verse.search(new RegExp(`\\b${spec.blank}\\b`));
       check(at >= 0, `${label}: "${spec.blank}" does not appear in the CPDV verse`);
 
       if (at >= 0) {
