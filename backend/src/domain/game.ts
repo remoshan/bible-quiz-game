@@ -22,6 +22,7 @@ const POINTS_PER_SECOND_LEFT = 10;
 const LATENCY_GRACE_MS = 1500;
 const SESSION_TTL_MS = 60 * 60 * 1000;
 const SWEEP_INTERVAL_MS = 10 * 60 * 1000;
+const MAX_SESSIONS = 5000;
 
 export type StoredQuestion = {
   id: string;
@@ -132,6 +133,7 @@ export function createSession(difficulty: Difficulty, questions: StoredQuestion[
     summary: null,
   };
 
+  if (sessions.size >= MAX_SESSIONS) sessions.delete(sessions.keys().next().value!);
   sessions.set(session.id, session);
 
   return {
@@ -143,6 +145,7 @@ export function createSession(difficulty: Difficulty, questions: StoredQuestion[
     index: 0,
     question: toPublic(questions[0]),
     deadline: session.deadline,
+    serverNow: now,
   };
 }
 
@@ -157,7 +160,7 @@ type AnswerOutcome =
       score: number;
       correctAnswers: number;
       status: "playing" | "finished";
-      next: { index: number; question: PublicQuestion; deadline: number } | null;
+      next: { index: number; question: PublicQuestion; deadline: number; serverNow: number } | null;
       summary: {
         score: number;
         correctAnswers: number;
@@ -222,6 +225,7 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
       index: session.index,
       question: toPublic(session.questions[session.index]),
       deadline: session.deadline,
+      serverNow: now,
     },
     summary: null,
   };
@@ -240,7 +244,7 @@ export function getSavableSession(gameId: string): SavableResult {
   return { ok: true, summary: session.summary };
 }
 
-export function markSessionSaved(gameId: string) {
+export function markSessionSaved(gameId: string, saved = true) {
   const session = sessions.get(gameId);
-  if (session) session.saved = true;
+  if (session) session.saved = saved;
 }

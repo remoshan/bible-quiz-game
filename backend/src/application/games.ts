@@ -48,16 +48,21 @@ export async function saveGameScore(gameId: string, user: AuthUser) {
 
   const { summary } = savable;
 
-  await saveScore({
-    user_id: user.id,
-    difficulty: summary.difficulty,
-    score: summary.score,
-    correct_answers: summary.correctAnswers,
-    total_questions: summary.totalQuestions,
-    duration_ms: summary.durationMs,
-  });
-
   markSessionSaved(gameId);
+
+  try {
+    await saveScore({
+      user_id: user.id,
+      difficulty: summary.difficulty,
+      score: summary.score,
+      correct_answers: summary.correctAnswers,
+      total_questions: summary.totalQuestions,
+      duration_ms: summary.durationMs,
+    });
+  } catch (error) {
+    markSessionSaved(gameId, false);
+    throw error;
+  }
 
   const standing = await fetchPlayerStanding(summary.difficulty, user.id);
   const rank = standing?.rank ?? null;

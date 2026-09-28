@@ -78,6 +78,11 @@ const initialGame = {
 
 let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
 let revealTimer: ReturnType<typeof setTimeout> | undefined;
+let retryTimer: ReturnType<typeof setTimeout> | undefined;
+let lastSubmitted = "";
+
+const toLocal = (deadline: number, serverNow?: number) =>
+  serverNow ? Date.now() + (deadline - serverNow) : deadline;
 
 const clearTimers = () => {
   if (deadlineTimer) clearTimeout(deadlineTimer);
@@ -102,10 +107,13 @@ export const useGameStore = create<GameState>((set, get) => {
       const { gameId, saveState } = get();
       if (!gameId || saveState === "saving" || saveState === "saved") return;
 
-      const token = await useAuthStore.getState().accessToken();
-      if (!token) return;
-
       set({ saveState: "saving", saveError: null });
+
+      const token = await useAuthStore.getState().accessToken();
+      if (!token) {
+        set({ saveState: "idle" });
+        return;
+      }
 
       try {
         const body = await request(`/api/games/${gameId}/save`, {
@@ -124,12 +132,14 @@ export const useGameStore = create<GameState>((set, get) => {
 
     loadDifficulties: async () => {
       if (get().difficulties.length > 0) return;
+      clearTimeout(retryTimer);
 
       try {
         const body = await request("/api/difficulties");
-        set({ difficulties: body.difficulties });
+        set({ difficulties: body.difficulties, error: null });
       } catch {
-        set({ error: "Cannot reach the game server. Is the backend running?" });
+        set({ error: "Cannot reach the game server. Retrying…" });
+        retryTimer = setTimeout(() => void get().loadDifficulties(), 5000);
       }
     },
 
@@ -145,6 +155,8 @@ export const useGameStore = create<GameState>((set, get) => {
 
         if (get().status !== "loading" || get().difficulty !== difficulty) return;
 
+        const deadline = toLocal(game.deadline, game.serverNow);
+
         set({
           status: "playing",
           gameId: game.gameId,
@@ -152,10 +164,10 @@ export const useGameStore = create<GameState>((set, get) => {
           revealMs: game.revealMs,
           index: game.index,
           question: game.question,
-          deadline: game.deadline,
+          deadline,
         });
 
-        armDeadline(game.deadline);
+        armDeadline(deadline);
       } catch (error) {
         set({
           ...initialGame,
@@ -169,6 +181,10 @@ export const useGameStore = create<GameState>((set, get) => {
       const { status, correctIndex, gameId, index } = get();
       if (status !== "playing" || correctIndex !== null || !gameId) return;
 
+      const key = `${gameId}:${index}`;
+      if (lastSubmitted === key) return;
+      lastSubmitted = key;
+
       clearTimers();
       set({ selected: choice });
 
@@ -177,6 +193,10 @@ export const useGameStore = create<GameState>((set, get) => {
           method: "POST",
           body: JSON.stringify({ index, choice }),
         });
+
+        if (get().gameId !== gameId || get().index !== index) return;
+
+        const nextDeadline = outcome.next ? toLocal(outcome.next.deadline, outcome.next.serverNow) : 0;
 
         set({
           correctIndex: outcome.correctIndex,
@@ -193,15 +213,16 @@ export const useGameStore = create<GameState>((set, get) => {
           set({
             index: outcome.next.index,
             question: outcome.next.question,
-            deadline: outcome.next.deadline,
+            deadline: nextDeadline,
             selected: null,
             correctIndex: null,
             reference: null,
           });
 
-          armDeadline(outcome.next.deadline);
+          armDeadline(nextDeadline);
         }, get().revealMs);
       } catch (error) {
+        if (get().gameId !== gameId) return;
         clearTimers();
         set({
           ...initialGame,
