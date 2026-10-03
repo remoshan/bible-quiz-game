@@ -175,7 +175,8 @@ from an authenticated call to the API.
 | API | Express 5 on Node 24 | TypeScript executed directly — no build step |
 | Persistence | Supabase (PostgreSQL) | `service_role` key, server-side only, behind RLS |
 | Realtime | `@supabase/realtime-js` | Subscription only. The full client is never loaded |
-| Tests | `node:test` | Built in; no framework dependency |
+| Tests | `node:test` (backend), Vitest (frontend) | The frontend needs path-alias support `node:test` lacks |
+| CI | GitHub Actions | Tests, typecheck, lint, build and the question check on every push |
 
 ---
 
@@ -396,12 +397,20 @@ cd backend && npm test && npm run typecheck
 ```
 
 ```bash
-cd frontend && npm run typecheck && npm run lint && npm run build
+cd frontend && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
 22 backend tests cover scoring, the timeout and latency-grace boundaries, replay and
 skip-ahead rejection, the event bus including a throwing subscriber, and the guarantee
 that a question leaves the server without its answer.
+
+6 frontend tests cover the game store's races: a double tap sending one answer, a quit
+during an in-flight answer staying quit, deadlines re-based for client clock skew, a
+concurrent save posting once, and a failed load retrying. Each was checked by putting the
+original bug back and watching its test fail.
+
+GitHub Actions runs all of the above, plus the question check, on every push and pull
+request.
 
 ### On a phone
 
@@ -507,7 +516,7 @@ LICENSE                       MIT
 | Command | Description |
 |---|---|
 | `npm run dev` | Run in watch mode (both apps) |
-| `npm test` | Backend test suite (`node:test`) |
+| `npm test` | Test suite (`node:test` backend, Vitest frontend) |
 | `npm run typecheck` | `tsc --noEmit` (both apps) |
 | `npm run lint` | ESLint (frontend) |
 | `npm run build` | Production build (frontend) |
@@ -555,8 +564,8 @@ or a queue with acknowledgements.
 blanked word and the book. Who *said* a line is an editorial judgement made by hand across
 23 questions — the one part of the bank a script cannot defend.
 
-**No frontend tests.** Typecheck, lint and build pass, and the flows have been exercised by
-hand in a real browser, but there is no automated coverage of the UI.
+**Frontend tests stop at the store.** The game store's async logic is covered, but no
+component is rendered in a test; the screens are exercised by hand in a real browser.
 
 **Schema changes are manual.** SQL is applied through the Supabase editor with no migration
 tooling, so there is no ordering guarantee and no rollback.
