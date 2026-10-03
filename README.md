@@ -180,7 +180,8 @@ from an authenticated call to the API.
 | API | Express 5 on Node 24 | TypeScript executed directly — no build step |
 | Persistence | Supabase (PostgreSQL) | `service_role` key, server-side only, behind RLS |
 | Realtime | `@supabase/realtime-js` | Subscription only. The full client is never loaded |
-| Tests | `node:test` | Built in; no framework dependency |
+| Tests | `node:test` (backend), Vitest (frontend) | The frontend needs path-alias support `node:test` lacks |
+| CI | GitHub Actions | Tests, typecheck, lint, build and the question check on every push |
 
 ---
 
@@ -255,7 +256,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 |---|---|
 | `SUPABASE_SERVICE_ROLE_KEY` | Full database access. Server-side only, never sent to a client |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Realtime subscription only. Public on purpose |
-| `CORS_ORIGIN` | The single origin allowed to call the API |
+| `CORS_ORIGIN` | Origins allowed to call the API, comma-separated |
+| `TRUST_PROXY` | Proxy hops in front of the API. Defaults to `1` for Render; rate limits only see real client IPs when this matches the host |
 
 The anon key being public is not an oversight. `lockdown.sql` revokes its access to
 `questions` and `get_quiz`, and the leaderboard's readable-by-everyone policy is
@@ -268,6 +270,11 @@ simply refreshes on load instead of live.
 
 Only the backend talks to the database. Every route below is the browser's sole source of
 game state.
+
+Starting a round, signing up and signing in are rate-limited per client IP — 30 a minute,
+5 an hour and 20 per 15 minutes respectively. Past the limit the API answers `429` with a
+readable `error` and standard `RateLimit` headers. Answering is not limited; the session
+already accepts each question exactly once.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -401,12 +408,20 @@ cd backend && npm test && npm run typecheck
 ```
 
 ```bash
-cd frontend && npm run typecheck && npm run lint && npm run build
+cd frontend && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
 22 backend tests cover scoring, the timeout and latency-grace boundaries, replay and
 skip-ahead rejection, the event bus including a throwing subscriber, and the guarantee
 that a question leaves the server without its answer.
+
+6 frontend tests cover the game store's races: a double tap sending one answer, a quit
+during an in-flight answer staying quit, deadlines re-based for client clock skew, a
+concurrent save posting once, and a failed load retrying. Each was checked by putting the
+original bug back and watching its test fail.
+
+GitHub Actions runs all of the above, plus the question check, on every push and pull
+request.
 
 ### On a phone
 
@@ -512,7 +527,7 @@ LICENSE                       MIT
 | Command | Description |
 |---|---|
 | `npm run dev` | Run in watch mode (both apps) |
-| `npm test` | Backend test suite (`node:test`) |
+| `npm test` | Test suite (`node:test` backend, Vitest frontend) |
 | `npm run typecheck` | `tsc --noEmit` (both apps) |
 | `npm run lint` | ESLint (frontend) |
 | `npm run build` | Production build (frontend) |
@@ -545,7 +560,8 @@ These are deliberate, and documented rather than hidden.
 an hour and swept every ten minutes. A restart strands every round in progress, and running more than one API instance
 would break unless requests are pinned to the instance that started the game. Moving the
 session store behind an interface backed by Redis is the fix; it is not needed at one
-instance.
+instance. Memory is bounded by the per-IP limit on starting rounds and a hard cap of 5,000
+sessions, which evicts the oldest first.
 
 **`answer.graded` has no subscriber.** It is published on every answer and nothing listens.
 Kept as a deliberate extension point for streaks and analytics, but it is speculative, and
@@ -560,14 +576,17 @@ or a queue with acknowledgements.
 blanked word and the book. Who *said* a line is an editorial judgement made by hand across
 23 questions — the one part of the bank a script cannot defend.
 
-**No frontend tests.** Typecheck, lint and build pass, and the flows have been exercised by
-hand in a real browser, but there is no automated coverage of the UI.
+**Frontend tests stop at the store.** The game store's async logic is covered, but no
+component is rendered in a test; the screens are exercised by hand in a real browser.
 
 **Schema changes are manual.** SQL is applied through the Supabase editor with no migration
 tooling, so there is no ordering guarantee and no rollback.
 
-**Free-tier Supabase projects pause after a week of inactivity** and must be resumed from
-the dashboard.
+**Free tiers sleep.** Render's free instance sleeps after 15 minutes idle and takes about a
+minute to wake; Supabase's free project pauses after a week. `.github/workflows/keep-warm.yml`
+reads the leaderboard every ten minutes, which touches both. GitHub runs schedules on a
+best-effort basis, only from the default branch, and disables them after 60 days without
+repository activity.
 
 ---
 
