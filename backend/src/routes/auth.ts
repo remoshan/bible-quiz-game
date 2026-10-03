@@ -8,11 +8,12 @@ import {
   signIn,
   signUp,
 } from "../infrastructure/accounts.ts";
+import { signInLimit, signUpLimit } from "./limits.ts";
 import { requireUser } from "./session.ts";
 
 export const authRoutes = Router();
 
-authRoutes.post("/signup", async (req, res) => {
+authRoutes.post("/signup", signUpLimit, async (req, res) => {
   const { email, password, displayName } = req.body ?? {};
 
   if (!isEmail(email)) {
@@ -48,7 +49,7 @@ authRoutes.post("/signup", async (req, res) => {
   });
 });
 
-authRoutes.post("/signin", async (req, res) => {
+authRoutes.post("/signin", signInLimit, async (req, res) => {
   const { email, password } = req.body ?? {};
 
   if (!isEmail(email) || typeof password !== "string" || password.length === 0) {

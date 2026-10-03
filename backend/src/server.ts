@@ -13,6 +13,8 @@ registerSubscribers();
 
 const app = express();
 
+app.set("trust proxy", Number(process.env.TRUST_PROXY ?? 1));
+
 app.use(cors({ origin }));
 app.use(express.json({ limit: "8kb" }));
 

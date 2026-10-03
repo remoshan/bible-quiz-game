@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { answerQuestion, saveGameScore, startGame } from "../application/games.ts";
 import { isChoice, isDifficulty, isIndex } from "../domain/game.ts";
+import { startLimit } from "./limits.ts";
 import { requireUser } from "./session.ts";
 
 export const gameRoutes = Router();
 
-gameRoutes.post("/", async (req, res) => {
+gameRoutes.post("/", startLimit, async (req, res) => {
   const { difficulty } = req.body ?? {};
 
   if (!isDifficulty(difficulty)) {
