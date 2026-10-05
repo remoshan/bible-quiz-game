@@ -94,7 +94,6 @@ have.
 
 | Event | Published when | Consumed by |
 |---|---|---|
-| `answer.graded` | An answer is accepted, right or wrong | — |
 | `game.completed` | The last question of a round is answered | activity log |
 | `score.saved` | A finished round reaches the leaderboard | activity log, realtime broadcast |
 
@@ -129,7 +128,6 @@ sequenceDiagram
     B->>R: POST /api/games/:id/answers { index, choice }
     R->>A: answerQuestion
     A->>D: submitAnswer — server clock decides
-    A-)A: answer.graded
     D-->>B: score, correctIndex, next question
     Note over B,D: repeats until the last question
     A-)A: game.completed
@@ -193,18 +191,12 @@ Run these in the Supabase SQL editor, in order, on a **new** project:
 
 | File | Purpose |
 |---|---|
-| `backend/sql/schema.sql` | Tables, RLS policies, the new-user trigger, `get_quiz` |
+| `backend/sql/schema.sql` | Tables, indexes, RLS policies, the new-user trigger, and the quiz and ranking functions |
 | `backend/sql/seed.sql` | 75 CPDV questions across three difficulties |
-| `backend/sql/leaderboard.sql` | Best-score-per-player ranking, unique display-name index |
-| `backend/sql/lockdown.sql` | Revokes browser-level access to questions |
 
 `schema.sql` runs once. On a database that already has the tables it fails with
 `relation "users" already exists` — that is the script doing its job, not a bug. Later
 schema changes ship as their own `alter` statements.
-
-`backend/sql/reset-test-data.sql` is kept separately: it lists every registered player,
-then deletes them and their scores. Irreversible, so it opens with a `select` you are
-meant to read first.
 
 ### 2. Create the environment files
 
@@ -254,10 +246,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 | `CORS_ORIGIN` | Origins allowed to call the API, comma-separated |
 | `TRUST_PROXY` | Proxy hops in front of the API. Defaults to `1` for Render; rate limits only see real client IPs when this matches the host |
 
-The anon key being public is not an oversight. `lockdown.sql` revokes its access to
-`questions` and `get_quiz`, and the leaderboard's readable-by-everyone policy is
-deliberate. **Leave both Supabase values blank and the app still runs** — the leaderboard
-simply refreshes on load instead of live.
+The anon key being public is not an oversight. `schema.sql` gives `questions` no read
+policy and grants `get_quiz` to the service role only, so the key cannot see a single
+question or answer; the leaderboard's readable-by-everyone policy is deliberate.
+
+**Leave both Supabase values blank and the app still runs** — the leaderboard simply
+refreshes on load instead of live.
 
 ---
 
@@ -295,12 +289,11 @@ Responds `201` with the first question — and note what is *absent*:
 ```json
 {
   "gameId": "b3f1...",
-  "difficulty": "easy",
   "totalQuestions": 10,
-  "secondsPerQuestion": 20,
   "revealMs": 1000,
   "index": 0,
   "deadline": 1774483200000,
+  "serverNow": 1774483180000,
   "question": {
     "id": "0a9c...",
     "type": "fill_in_the_blank",
@@ -406,9 +399,10 @@ cd backend && npm test && npm run typecheck
 cd frontend && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-22 backend tests cover scoring, the timeout and latency-grace boundaries, replay and
-skip-ahead rejection, the event bus including a throwing subscriber, and the guarantee
-that a question leaves the server without its answer.
+23 backend tests cover scoring, the timeout and latency-grace boundaries, replay and
+skip-ahead rejection, the event bus including a throwing subscriber, the realtime
+broadcast, the rate limit on starting rounds, and the guarantee that a question leaves the
+server without its answer.
 
 6 frontend tests cover the game store's races: a double tap sending one answer, a quit
 during an in-flight answer staying quit, deadlines re-based for client clock skew, a
@@ -444,6 +438,10 @@ cannot leak it by accident — a new field has to be added to that function deli
 The countdown bar in the UI is decoration. Grading compares `Date.now()` on the server
 against the deadline it issued, plus a 1.5 s latency grace so a slow network does not cost
 a player a correct answer. A client that fakes its own timer changes nothing.
+
+Every deadline travels with `serverNow`, the server's clock at the moment it was issued. The
+client counts down `deadline - serverNow` from its own clock, so a device whose clock is
+minutes off still shows the true time remaining.
 
 ### Index matching closes replay and skip-ahead together
 
@@ -511,8 +509,9 @@ backend/                      Express API. Rules, scoring, validation, persisten
 ├── src/domain/               Game rules and the event bus. No I/O
 ├── src/infrastructure/       Supabase adapters
 ├── scripts/                  Question bank + the CPDV verifier
-└── sql/                      Schema, seed, lockdown, leaderboard, reset
+└── sql/                      Schema and seed
 
+.github/workflows/            CI: tests, typecheck, lint, build, question check
 README.md                     This file
 LICENSE                       MIT
 ```
@@ -551,16 +550,12 @@ start immediately.
 
 These are deliberate, and documented rather than hidden.
 
-**Game sessions live in memory.** `domain/game.ts` holds in-flight rounds in a `Map`, expired after
-an hour and swept every ten minutes. A restart strands every round in progress, and running more than one API instance
-would break unless requests are pinned to the instance that started the game. Moving the
-session store behind an interface backed by Redis is the fix; it is not needed at one
-instance. Memory is bounded by the per-IP limit on starting rounds and a hard cap of 5,000
-sessions, which evicts the oldest first.
-
-**`answer.graded` has no subscriber.** It is published on every answer and nothing listens.
-Kept as a deliberate extension point for streaks and analytics, but it is speculative, and
-by a strict reading of YAGNI it should not exist yet.
+**Game sessions live in memory.** `domain/game.ts` holds in-flight rounds in a `Map`,
+expired after an hour and swept every ten minutes. A restart strands every round in
+progress, and running more than one API instance would break unless requests are pinned to
+the instance that started the game. Moving the session store behind an interface backed by
+Redis is the fix; it is not needed at one instance. Memory is bounded by the per-IP limit
+on starting rounds and a hard cap of 5,000 sessions, which evicts the oldest first.
 
 **Realtime is fire-and-forget.** A browser that is offline when a broadcast goes out never
 receives it and will show a stale board until something else triggers a refetch. There is
@@ -579,11 +574,11 @@ tooling, so there is no ordering guarantee and no rollback.
 
 **Free tiers sleep.** Render's free instance sleeps after 15 minutes idle and takes 15-30
 seconds to wake; Supabase's free project pauses after a week. An external uptime monitor
-reads the leaderboard every ten minutes, which keeps both awake. It is configured outside this
-repository, so it is not versioned with the code. A scheduled GitHub workflow was tried first
-and dropped: GitHub treats schedules as best-effort, and a ten-minute schedule actually ran
-every four to seven hours. One always-awake free Render service uses about 744 of its 750
-monthly hours.
+reads the leaderboard every ten minutes, which keeps both awake. It is configured outside
+this repository, so it is not versioned with the code. A scheduled GitHub workflow was
+tried first and dropped: GitHub treats schedules as best-effort, and a ten-minute schedule
+actually ran every four to seven hours. One always-awake free Render service uses about
+744 of its 750 monthly hours.
 
 ---
 

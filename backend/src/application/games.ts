@@ -26,14 +26,6 @@ export function answerQuestion(gameId: string, index: number, choice: number | n
 
   if (!outcome.ok) return outcome;
 
-  publish("answer.graded", {
-    gameId,
-    index,
-    correct: outcome.correct,
-    timedOut: outcome.timedOut,
-    score: outcome.score,
-  });
-
   if (outcome.summary) {
     publish("game.completed", { gameId, summary: outcome.summary });
   }

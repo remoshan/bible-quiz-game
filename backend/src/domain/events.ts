@@ -2,13 +2,6 @@ import { EventEmitter } from "node:events";
 import type { GameSummary } from "./game.ts";
 
 export type DomainEvents = {
-  "answer.graded": {
-    gameId: string;
-    index: number;
-    correct: boolean;
-    timedOut: boolean;
-    score: number;
-  };
   "game.completed": {
     gameId: string;
     summary: GameSummary;
@@ -47,8 +40,4 @@ export function subscribe<K extends DomainEvent>(
   return () => {
     emitter.off(name, guarded);
   };
-}
-
-export function subscriberCount(name: DomainEvent) {
-  return emitter.listenerCount(name);
 }
