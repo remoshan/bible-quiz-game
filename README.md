@@ -577,11 +577,13 @@ component is rendered in a test; the screens are exercised by hand in a real bro
 **Schema changes are manual.** SQL is applied through the Supabase editor with no migration
 tooling, so there is no ordering guarantee and no rollback.
 
-**Free tiers sleep.** Render's free instance sleeps after 15 minutes idle and takes about a
-minute to wake; Supabase's free project pauses after a week. `.github/workflows/keep-warm.yml`
-reads the leaderboard every ten minutes, which touches both. GitHub runs schedules on a
-best-effort basis, only from the default branch, and disables them after 60 days without
-repository activity.
+**Free tiers sleep.** Render's free instance sleeps after 15 minutes idle and takes 15-30
+seconds to wake; Supabase's free project pauses after a week. An external uptime monitor
+reads the leaderboard every ten minutes, which keeps both awake. It is configured outside this
+repository, so it is not versioned with the code. A scheduled GitHub workflow was tried first
+and dropped: GitHub treats schedules as best-effort, and a ten-minute schedule actually ran
+every four to seven hours. One always-awake free Render service uses about 744 of its 750
+monthly hours.
 
 ---
 
