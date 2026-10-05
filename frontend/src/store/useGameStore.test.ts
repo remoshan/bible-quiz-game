@@ -30,9 +30,7 @@ function newGame(overrides: object = {}) {
   games += 1;
   return {
     gameId: `game-${games}`,
-    difficulty: "easy",
     totalQuestions: 2,
-    secondsPerQuestion: 20,
     revealMs: 1000,
     index: 0,
     question,

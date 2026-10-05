@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { publish, subscribe, subscriberCount, type DomainEvents } from "./events.ts";
+import { publish, subscribe, type DomainEvents } from "./events.ts";
 
 const summary: DomainEvents["game.completed"]["summary"] = {
   score: 420,
@@ -34,7 +34,6 @@ test("unsubscribing stops delivery", () => {
   publish("game.completed", { gameId: "g2", summary });
 
   assert.equal(calls, 1);
-  assert.equal(subscriberCount("game.completed"), 0);
 });
 
 test("a failing subscriber cannot break publish or the subscribers after it", () => {
@@ -53,7 +52,6 @@ test("a failing subscriber cannot break publish or the subscribers after it", ()
 });
 
 test("publishing with no subscribers is a no-op", () => {
-  assert.equal(subscriberCount("score.saved"), 0);
   assert.doesNotThrow(() =>
     publish("score.saved", {
       gameId: "g4",

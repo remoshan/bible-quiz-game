@@ -138,9 +138,7 @@ export function createSession(difficulty: Difficulty, questions: StoredQuestion[
 
   return {
     gameId: session.id,
-    difficulty,
     totalQuestions: questions.length,
-    secondsPerQuestion: seconds,
     revealMs: REVEAL_MS,
     index: 0,
     question: toPublic(questions[0]),
