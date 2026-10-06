@@ -6,6 +6,16 @@ import { requireUser } from "./session.ts";
 
 export const gameRoutes = Router();
 
+const REASONS = {
+  not_found: "This round has expired. Start a new one.",
+  already_finished: "This round is already over.",
+  out_of_sync: "That question has already been answered.",
+  not_finished: "Finish the round before saving your score.",
+  already_saved: "This score is already saved.",
+};
+
+const rejection = (code: keyof typeof REASONS) => ({ error: REASONS[code], code });
+
 gameRoutes.post("/", startLimit, async (req, res) => {
   const { difficulty } = req.body ?? {};
 
@@ -40,7 +50,7 @@ gameRoutes.post("/:gameId/answers", (req, res) => {
   const outcome = answerQuestion(req.params.gameId, index, choice);
 
   if (!outcome.ok) {
-    res.status(outcome.reason === "not_found" ? 404 : 409).json({ error: outcome.reason });
+    res.status(outcome.reason === "not_found" ? 404 : 409).json(rejection(outcome.reason));
     return;
   }
 
@@ -54,7 +64,7 @@ gameRoutes.post("/:gameId/save", async (req, res) => {
   const result = await saveGameScore(req.params.gameId, user);
 
   if (!result.ok) {
-    res.status(result.reason === "not_found" ? 404 : 409).json({ error: result.reason });
+    res.status(result.reason === "not_found" ? 404 : 409).json(rejection(result.reason));
     return;
   }
 

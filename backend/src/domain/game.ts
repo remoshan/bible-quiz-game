@@ -159,13 +159,7 @@ type AnswerOutcome =
       correctAnswers: number;
       status: "playing" | "finished";
       next: { index: number; question: PublicQuestion; deadline: number; serverNow: number } | null;
-      summary: {
-        score: number;
-        correctAnswers: number;
-        totalQuestions: number;
-        durationMs: number;
-        difficulty: Difficulty;
-      } | null;
+      summary: GameSummary | null;
     };
 
 export function submitAnswer(gameId: string, index: number, choice: number | null): AnswerOutcome {
@@ -192,23 +186,10 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
   if (isLast) {
     session.finished = true;
     session.summary = summaryFor(session, now);
-
-    return {
-      ok: true,
-      correct,
-      correctIndex: question.correct_index,
-      reference: question.reference,
-      timedOut,
-      score: session.score,
-      correctAnswers: session.correctAnswers,
-      status: "finished",
-      next: null,
-      summary: session.summary,
-    };
+  } else {
+    session.index += 1;
+    session.deadline = now + REVEAL_MS + seconds * 1000;
   }
-
-  session.index += 1;
-  session.deadline = now + REVEAL_MS + seconds * 1000;
 
   return {
     ok: true,
@@ -218,14 +199,16 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
     timedOut,
     score: session.score,
     correctAnswers: session.correctAnswers,
-    status: "playing",
-    next: {
-      index: session.index,
-      question: toPublic(session.questions[session.index]),
-      deadline: session.deadline,
-      serverNow: now,
-    },
-    summary: null,
+    status: isLast ? "finished" : "playing",
+    next: isLast
+      ? null
+      : {
+          index: session.index,
+          question: toPublic(session.questions[session.index]),
+          deadline: session.deadline,
+          serverNow: now,
+        },
+    summary: session.summary,
   };
 }
 

@@ -67,6 +67,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
               key={setting.key}
               type="button"
               onClick={() => setDifficulty(setting.key)}
+              aria-pressed={isActive}
               className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
               style={
                 isActive

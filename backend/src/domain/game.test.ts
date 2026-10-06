@@ -74,6 +74,7 @@ test("a wrong answer scores nothing but still advances", () => {
   assert.equal(outcome.correctIndex, 2);
   assert.equal(outcome.status, "playing");
   assert.equal(outcome.next?.index, 1);
+  assert.equal(outcome.summary, null);
 });
 
 test("the next deadline leaves room for the reveal animation", () => {
