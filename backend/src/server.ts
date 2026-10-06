@@ -33,7 +33,12 @@ app.use("/api/auth", authRoutes);
 app.use("/api/games", gameRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 
-app.use((error: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((error: Error & { status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (error.status && error.status < 500) {
+    res.status(error.status).json({ error: "The request could not be read." });
+    return;
+  }
+
   console.error(error);
   res.status(500).json({ error: "Something went wrong on the server." });
 });

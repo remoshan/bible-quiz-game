@@ -329,6 +329,16 @@ Requires `Authorization: Bearer <accessToken>`. The body is ignored — the serv
 the total it recorded. Returns `409 not_finished` for an unfinished round and
 `409 already_saved` on a second attempt.
 
+Every rejection carries a sentence a player can read in `error` and, for a round the server
+no longer holds or will not accept, the machine-readable reason in `code`:
+
+```json
+{ "error": "This round has expired. Start a new one.", "code": "not_found" }
+```
+
+A body that is not valid JSON, or is over 8 KB, is a `4xx` with
+`"The request could not be read."`, not a server error.
+
 ### `GET /api/leaderboard?difficulty=easy&limit=20`
 
 One row per player — their best round at that difficulty — so replaying cannot crowd out

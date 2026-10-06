@@ -120,7 +120,7 @@ export async function isDisplayNameTaken(displayName: string) {
   const { data, error } = await supabase
     .from("users")
     .select("id")
-    .ilike("display_name", displayName.trim())
+    .ilike("display_name", displayName.trim().replace(/[\\%_*]/g, "\\$&"))
     .limit(1);
 
   if (error) throw new Error(`Display name lookup failed: ${error.message}`);
