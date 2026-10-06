@@ -39,6 +39,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Display name"
+          aria-label="Display name"
           autoComplete="nickname"
           maxLength={32}
           required
@@ -51,6 +52,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Email"
+        aria-label="Email"
         autoComplete="email"
         required
         className={field}
@@ -61,6 +63,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder={isSignUp ? "Password (8+ characters)" : "Password"}
+        aria-label="Password"
         autoComplete={isSignUp ? "new-password" : "current-password"}
         required
         className={field}

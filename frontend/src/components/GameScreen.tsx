@@ -42,6 +42,13 @@ export function GameScreen() {
 
   if (!question) return null;
 
+  const answerText = isRevealed ? question.options[correctIndex] : "";
+  const announcement = !isRevealed
+    ? ""
+    : selected === correctIndex
+      ? "Correct."
+      : `${selected === null ? "Time's up" : "Wrong"}. The answer is ${answerText}.`;
+
   return (
     <main className="mx-auto flex h-dvh w-full max-w-md flex-col px-6 pb-6 pt-5 sm:max-w-2xl">
       <div className="flex shrink-0 items-center">
@@ -101,6 +108,10 @@ export function GameScreen() {
         </AnimatePresence>
       </div>
 
+      <p className="sr-only" aria-live="polite">
+        {announcement}
+      </p>
+
       <ul className="shrink-0 sm:grid sm:grid-cols-2 sm:gap-x-6">
         {question.options.map((option, i) => {
           const isCorrect = i === correctIndex;
@@ -128,10 +139,15 @@ export function GameScreen() {
                 type="button"
                 disabled={isRevealed}
                 onClick={() => void answer(i)}
-                className="w-full py-3.5 pl-3 pr-1 text-left text-base transition-colors active:bg-[var(--tint)]"
+                className="flex w-full items-center justify-between gap-3 py-3.5 pl-3 pr-3 text-left text-base transition-colors active:bg-[var(--tint)]"
                 style={revealStyle}
               >
                 {option}
+                {isRevealed && (isCorrect || isPicked) ? (
+                  <span aria-hidden="true" className="shrink-0 font-semibold">
+                    {isCorrect ? "✓" : "✗"}
+                  </span>
+                ) : null}
               </button>
             </li>
           );
