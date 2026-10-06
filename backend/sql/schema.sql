@@ -3,7 +3,8 @@ create extension if not exists pgcrypto;
 create table public.users (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint users_display_name_length check (char_length(trim(display_name)) between 1 and 32)
 );
 
 create table public.questions (
@@ -148,21 +149,3 @@ grant execute on function public.get_player_standing(text, uuid) to service_role
 alter table public.users enable row level security;
 alter table public.questions enable row level security;
 alter table public.leaderboard enable row level security;
-
-create policy "Profiles are viewable by everyone"
-  on public.users for select
-  using (true);
-
-create policy "Players can update their own profile"
-  on public.users for update
-  using ((select auth.uid()) = id)
-  with check ((select auth.uid()) = id);
-
-create policy "Leaderboard is viewable by everyone"
-  on public.leaderboard for select
-  using (true);
-
-create policy "Players can submit their own scores"
-  on public.leaderboard for insert
-  to authenticated
-  with check ((select auth.uid()) = user_id);

@@ -196,7 +196,7 @@ Run these in the Supabase SQL editor, in order, on a **new** project:
 
 | File | Purpose |
 |---|---|
-| `backend/sql/schema.sql` | Tables, indexes, RLS policies, the new-user trigger, and the quiz and ranking functions |
+| `backend/sql/schema.sql` | Tables, indexes, row-level security, the new-user trigger, and the quiz and ranking functions |
 | `backend/sql/seed.sql` | 75 CPDV questions across three difficulties |
 
 `schema.sql` runs once. On a database that already has the tables it fails with
@@ -251,9 +251,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 | `CORS_ORIGIN` | Origins allowed to call the API, comma-separated |
 | `TRUST_PROXY` | Proxy hops in front of the API. Defaults to `1` for Render; rate limits only see real client IPs when this matches the host |
 
-The anon key being public is not an oversight. `schema.sql` gives `questions` no read
-policy and grants `get_quiz` to the service role only, so the key cannot see a single
-question or answer; the leaderboard's readable-by-everyone policy is deliberate.
+The anon key being public is not an oversight. `schema.sql` turns on row-level security
+for every table and creates no policies, and grants the quiz and ranking functions to the
+service role only. The key, even paired with a signed-in player's token, cannot read a
+question or answer, write a score, or rename a player; every write goes through the API.
 
 **Leave both Supabase values blank and the app still runs** — the leaderboard simply
 refreshes on load instead of live.
@@ -368,6 +369,10 @@ leaksAnswer: False
 An anon-level read of `questions` returns `[]`, and `get_quiz` returns
 `permission denied for function`. The same calls with the service role succeed. Bank
 intact at easy 20 / medium 25 / hard 30.
+
+No table has a policy, so a signed-in player's token gets no further than the anon key. A
+40-character display name is refused by the database itself (`23514`, check violation),
+even through the service role.
 
 ### Domain events fire on real requests
 
@@ -543,7 +548,8 @@ LICENSE                       MIT
 
 Score is `100 per correct answer + 10 per second left on the clock`. Guests play without
 an account; finishing a round offers sign-in, and the score saves as soon as the account
-exists. Display names are unique, case-insensitively.
+exists. Display names are unique, case-insensitively, and 1–32 characters; the database
+enforces both.
 
 Supabase email confirmation is on by default, so a new account must confirm before signing
 in. Turn it off under **Authentication -> Providers -> Email** if you would rather players
