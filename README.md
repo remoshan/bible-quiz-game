@@ -249,7 +249,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 | `SUPABASE_SERVICE_ROLE_KEY` | Full database access. Server-side only, never sent to a client |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Realtime subscription only. Public on purpose |
 | `CORS_ORIGIN` | Origins allowed to call the API, comma-separated |
-| `TRUST_PROXY` | Proxy hops in front of the API. Defaults to `1` for Render; rate limits only see real client IPs when this matches the host |
+| `TRUST_PROXY` | Proxy hops in front of the API. Defaults to `1`; Render needs `3`. Rate limits only see real client IPs when this matches the host |
 
 The anon key being public is not an oversight. `schema.sql` turns on row-level security
 for every table and creates no policies, and grants the quiz and ranking functions to the
