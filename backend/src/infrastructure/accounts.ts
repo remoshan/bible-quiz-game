@@ -11,7 +11,6 @@ const MAX_DISPLAY_NAME_LENGTH = 32;
 
 export type AuthUser = {
   id: string;
-  email: string;
   displayName: string;
 };
 
@@ -50,20 +49,20 @@ type SupabaseSession = {
 
 type SupabaseUser = {
   id: string;
-  email?: string;
   user_metadata?: { display_name?: string };
 };
+
+const toUser = (user: SupabaseUser): AuthUser => ({
+  id: user.id,
+  displayName: user.user_metadata?.display_name ?? "Player",
+});
 
 function toSession(session: SupabaseSession, user: SupabaseUser): AuthSession {
   return {
     accessToken: session.access_token,
     refreshToken: session.refresh_token,
     expiresAt: (session.expires_at ?? 0) * 1000,
-    user: {
-      id: user.id,
-      email: user.email ?? "",
-      displayName: user.user_metadata?.display_name ?? "Player",
-    },
+    user: toUser(user),
   };
 }
 
@@ -107,13 +106,7 @@ export async function refreshSession(refreshToken: string): Promise<AuthResult> 
 export async function userFromToken(accessToken: string): Promise<AuthUser | null> {
   const { data, error } = await authClient.auth.getUser(accessToken);
 
-  if (error || !data.user) return null;
-
-  return {
-    id: data.user.id,
-    email: data.user.email ?? "",
-    displayName: data.user.user_metadata?.display_name ?? "Player",
-  };
+  return error || !data.user ? null : toUser(data.user);
 }
 
 export async function isDisplayNameTaken(displayName: string) {

@@ -4,7 +4,6 @@ import { request } from "@/lib/api";
 
 type AuthUser = {
   id: string;
-  email: string;
   displayName: string;
 };
 

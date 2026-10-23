@@ -9,7 +9,6 @@ import {
   signUp,
 } from "../infrastructure/accounts.ts";
 import { signInLimit, signUpLimit } from "./limits.ts";
-import { requireUser } from "./session.ts";
 
 export const authRoutes = Router();
 
@@ -83,11 +82,4 @@ authRoutes.post("/refresh", async (req, res) => {
   }
 
   res.json({ session: result.session });
-});
-
-authRoutes.get("/me", async (req, res) => {
-  const user = await requireUser(req, res);
-  if (!user) return;
-
-  res.json({ user });
 });

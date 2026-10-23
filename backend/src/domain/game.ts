@@ -174,7 +174,7 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
 
   const timedOut = now > session.deadline + LATENCY_GRACE_MS;
   const correct = !timedOut && choice !== null && choice === question.correct_index;
-  const secondsLeft = Math.max(0, Math.ceil((session.deadline - now) / 1000));
+  const secondsLeft = Math.min(seconds, Math.max(0, Math.ceil((session.deadline - now) / 1000)));
 
   if (correct) {
     session.score += POINTS_PER_CORRECT + secondsLeft * POINTS_PER_SECOND_LEFT;

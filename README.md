@@ -277,7 +277,6 @@ already accepts each question exactly once.
 | `POST` | `/api/auth/signup` | Creates an account and returns a session |
 | `POST` | `/api/auth/signin` | Exchanges email and password for a session |
 | `POST` | `/api/auth/refresh` | Trades a refresh token for a fresh session |
-| `GET` | `/api/auth/me` | The signed-in player |
 | `GET` | `/api/difficulties` | Question counts and timers, so the UI hard-codes no rules |
 | `POST` | `/api/games` | Starts a round, returns the first question without its answer |
 | `POST` | `/api/games/:gameId/answers` | Grades one answer, returns the score and the next question |
@@ -419,10 +418,10 @@ cd backend && npm test && npm run typecheck
 cd frontend && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-23 backend tests cover scoring, the timeout and latency-grace boundaries, replay and
-skip-ahead rejection, the event bus including a throwing subscriber, the realtime
-broadcast, the rate limit on starting rounds, and the guarantee that a question leaves the
-server without its answer.
+24 backend tests cover scoring and its time-bonus cap, the timeout and latency-grace
+boundaries, replay and skip-ahead rejection, the event bus including a throwing
+subscriber, the realtime broadcast, the rate limit on starting rounds, and the guarantee
+that a question leaves the server without its answer.
 
 6 frontend tests cover the game store's races: a double tap sending one answer, a quit
 during an in-flight answer staying quit, deadlines re-based for client clock skew, a

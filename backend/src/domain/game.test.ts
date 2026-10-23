@@ -89,6 +89,19 @@ test("the next deadline leaves room for the reveal animation", () => {
   mock.timers.reset();
 });
 
+test("answering during the reveal earns no more than the question's own clock", () => {
+  mock.timers.enable({ apis: ["Date"] });
+
+  const game = createSession("easy", makeQuestions(3));
+  submitAnswer(game.gameId, 0, 0);
+  const outcome = submitAnswer(game.gameId, 1, 2);
+
+  assert.equal(outcome.ok, true);
+  assert.equal(outcome.score, 100 + 20 * 10);
+
+  mock.timers.reset();
+});
+
 test("an answer arriving after the deadline scores nothing even if correct", () => {
   mock.timers.enable({ apis: ["Date"] });
 

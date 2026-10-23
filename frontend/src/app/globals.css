@@ -157,7 +157,6 @@ body::before {
     color-mix(in srgb, var(--gold) 11%, transparent),
     transparent 66%
   );
-  transition: opacity 0.45s ease;
 }
 
 body::after {
