@@ -259,6 +259,11 @@ question or answer, write a score, or rename a player; every write goes through 
 **Leave both Supabase values blank and the app still runs** — the leaderboard simply
 refreshes on load instead of live.
 
+`next.config.ts` builds the page's Content-Security-Policy from `NEXT_PUBLIC_API_URL` and
+`NEXT_PUBLIC_SUPABASE_URL`: the browser may connect only to the site itself, the API and
+Supabase Realtime. Change either value and redeploy, or the browser will refuse the new
+address.
+
 ---
 
 ## API reference
@@ -382,6 +387,14 @@ intact at easy 20 / medium 25 / hard 30.
 No table has a policy, so a signed-in player's token gets no further than the anon key. A
 40-character display name is refused by the database itself (`23514`, check violation),
 even through the service role.
+
+### Browser security headers
+
+Every page carries a Content-Security-Policy and `X-Content-Type-Options: nosniff`. The
+page cannot be framed (`frame-ancestors 'none'`), and loads scripts, styles and fonts only
+from its own origin. A full round, the results screen and the leaderboard raise no
+violations; a socket to an unlisted host is blocked. `unsafe-eval` is added in development
+only, for React's dev tooling.
 
 ### Domain events fire on real requests
 
