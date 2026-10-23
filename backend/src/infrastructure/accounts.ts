@@ -103,6 +103,16 @@ export async function refreshSession(refreshToken: string): Promise<AuthResult> 
   return { ok: true, session: toSession(data.session, data.user), requiresConfirmation: false };
 }
 
+export async function sendPasswordReset(email: string) {
+  const { error } = await authClient.auth.resetPasswordForEmail(email);
+  if (error) console.error("Password reset email failed:", error.message);
+}
+
+export async function setPassword(userId: string, password: string) {
+  const { error } = await supabase.auth.admin.updateUserById(userId, { password });
+  return error?.message ?? null;
+}
+
 export async function userFromToken(accessToken: string): Promise<AuthUser | null> {
   const { data, error } = await authClient.auth.getUser(accessToken);
 

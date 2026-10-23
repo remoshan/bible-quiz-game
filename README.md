@@ -271,8 +271,8 @@ address.
 Only the backend talks to the database. Every route below is the browser's sole source of
 game state.
 
-Starting a round, signing up and signing in are rate-limited per client IP — 30 a minute,
-5 an hour and 20 per 15 minutes respectively. Past the limit the API answers `429` with a
+Starting a round, signing up, signing in and requesting a reset link are rate-limited per
+client IP — 30 a minute, 5 an hour, 20 per 15 minutes and 5 an hour respectively. Past the limit the API answers `429` with a
 readable `error` and standard `RateLimit` headers. Answering is not limited; the session
 already accepts each question exactly once.
 
@@ -282,6 +282,8 @@ already accepts each question exactly once.
 | `POST` | `/api/auth/signup` | Creates an account and returns a session |
 | `POST` | `/api/auth/signin` | Exchanges email and password for a session |
 | `POST` | `/api/auth/refresh` | Trades a refresh token for a fresh session |
+| `POST` | `/api/auth/forgot` | Emails a password reset link. Same reply whether or not the account exists |
+| `POST` | `/api/auth/reset` | Sets a new password, given the token from the reset link |
 | `GET` | `/api/difficulties` | Question counts and timers, so the UI hard-codes no rules |
 | `POST` | `/api/games` | Starts a round, returns the first question without its answer |
 | `POST` | `/api/games/:gameId/answers` | Grades one answer, returns the score and the next question |
@@ -436,10 +438,11 @@ boundaries, replay and skip-ahead rejection, the event bus including a throwing
 subscriber, the realtime broadcast, the rate limit on starting rounds, and the guarantee
 that a question leaves the server without its answer.
 
-6 frontend tests cover the game store's races: a double tap sending one answer, a quit
+10 frontend tests cover the game store's races — a double tap sending one answer, a quit
 during an in-flight answer staying quit, deadlines re-based for client clock skew, a
-concurrent save posting once, and a failed load retrying. Each was checked by putting the
-original bug back and watching its test fail.
+concurrent save posting once, a failed load retrying — and the password reset: reading the
+token from the email link, recognising an expired link, and never calling the API without
+a token. Each was checked by putting the bug back and watching its test fail.
 
 GitHub Actions runs all of the above, plus the question check, on every push and pull
 request.
@@ -577,6 +580,13 @@ Supabase email confirmation is on by default, so a new account must confirm befo
 in. Turn it off under **Authentication -> Providers -> Email** if you would rather players
 start immediately.
 
+**Forgot password?** on the sign-in form emails a reset link. The link returns to the
+**Site URL** under **Authentication -> URL Configuration**, so that must be the address the
+game is served from. The page reads the token from the link, removes it from the address
+bar, and asks for a new password. Supabase's built-in email sender allows only a few
+messages an hour across the whole project; connect your own SMTP under **Authentication ->
+Emails** before relying on reset or confirmation emails at any scale.
+
 ---
 
 ## Known limitations
@@ -594,6 +604,11 @@ on starting rounds and a hard cap of 5,000 sessions, which evicts the oldest fir
 receives it and will show a stale board until something else triggers a refetch. There is
 no replay. Acceptable for a leaderboard; anything that mattered would want Redis Streams
 or a queue with acknowledgements.
+
+**A reset accepts any live session token.** Supabase marks a reset link's session the same
+way as other email links, so `/api/auth/reset` cannot tell it from an ordinary sign-in and
+does not ask for the old password. That matches Supabase's own default for changing a
+password; a token is short-lived and never leaves the player's browser.
 
 **Speaker attribution is not machine-checked.** The verifier proves the verse text, the
 blanked word and the book. Who *said* a line is an editorial judgement made by hand across
