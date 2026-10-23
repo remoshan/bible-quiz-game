@@ -119,7 +119,7 @@ export async function userFromToken(accessToken: string): Promise<AuthUser | nul
   return error || !data.user ? null : toUser(data.user);
 }
 
-export async function isDisplayNameTaken(displayName: string) {
+export async function isDisplayNameTaken(displayName: string, ownerId?: string) {
   const { data, error } = await supabase
     .from("users")
     .select("id")
@@ -128,5 +128,21 @@ export async function isDisplayNameTaken(displayName: string) {
 
   if (error) throw new Error(`Display name lookup failed: ${error.message}`);
 
-  return (data ?? []).length > 0;
+  return (data ?? []).some((row) => row.id !== ownerId);
+}
+
+export async function renameUser(userId: string, displayName: string) {
+  const name = displayName.trim();
+  const { error } = await supabase.from("users").update({ display_name: name }).eq("id", userId);
+
+  if (error?.code === "23505") return false;
+  if (error) throw new Error(`Rename failed: ${error.message}`);
+
+  const { error: metadataError } = await supabase.auth.admin.updateUserById(userId, {
+    user_metadata: { display_name: name },
+  });
+
+  if (metadataError) throw new Error(`Rename failed: ${metadataError.message}`);
+
+  return true;
 }

@@ -31,6 +31,7 @@ type AuthState = {
   requestReset: (email: string) => Promise<boolean>;
   resetPassword: (password: string) => Promise<boolean>;
   endRecovery: () => void;
+  rename: (displayName: string) => Promise<boolean>;
 };
 
 const REFRESH_MARGIN_MS = 60_000;
@@ -185,6 +186,38 @@ export const useAuthStore = create<AuthState>()(
       },
 
       endRecovery: () => set({ recovery: null, error: null }),
+
+      rename: async (displayName) => {
+        set({ busy: true, error: null, notice: null });
+
+        const token = await get().accessToken();
+        if (!token) {
+          set({ busy: false, error: "Your session has expired. Please sign in again." });
+          return false;
+        }
+
+        try {
+          const body = await request("/api/auth/profile", {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ displayName }),
+          });
+
+          const { session } = get();
+          set({
+            busy: false,
+            notice: "Display name updated.",
+            session: session && { ...session, user: body.user },
+          });
+          return true;
+        } catch (error) {
+          set({
+            busy: false,
+            error: error instanceof Error ? error.message : "Could not change your display name.",
+          });
+          return false;
+        }
+      },
     }),
     {
       name: "verse-session",

@@ -22,11 +22,17 @@ const ResetScreen = dynamic(() => import("@/components/ResetScreen").then((m) =>
   ssr: false,
 });
 
-type Overlay = "leaderboard" | "signin" | null;
+const AccountScreen = dynamic(
+  () => import("@/components/AccountScreen").then((m) => m.AccountScreen),
+  { ssr: false }
+);
+
+type Overlay = "leaderboard" | "signin" | "account" | null;
 
 export default function Page() {
   const status = useGameStore((s) => s.status);
   const recovery = useAuthStore((s) => s.recovery);
+  const signedIn = useAuthStore((s) => s.session !== null);
   const checkRecoveryLink = useAuthStore((s) => s.checkRecoveryLink);
   const [overlay, setOverlay] = useState<Overlay>(null);
 
@@ -46,6 +52,8 @@ export default function Page() {
         <LeaderboardScreen onBack={close} />
       ) : overlay === "signin" ? (
         <AuthScreen onBack={close} />
+      ) : overlay === "account" && signedIn ? (
+        <AccountScreen onBack={close} />
       ) : status === "playing" ? (
         <GameScreen />
       ) : status === "game_over" ? (
@@ -54,6 +62,7 @@ export default function Page() {
         <HomeScreen
           onOpenLeaderboard={() => setOverlay("leaderboard")}
           onOpenSignIn={() => setOverlay("signin")}
+          onOpenAccount={() => setOverlay("account")}
         />
       )}
     </>

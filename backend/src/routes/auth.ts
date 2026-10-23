@@ -5,6 +5,7 @@ import {
   isEmail,
   isPassword,
   refreshSession,
+  renameUser,
   sendPasswordReset,
   setPassword,
   signIn,
@@ -12,6 +13,7 @@ import {
   userFromToken,
 } from "../infrastructure/accounts.ts";
 import { resetLimit, signInLimit, signUpLimit } from "./limits.ts";
+import { requireUser } from "./session.ts";
 
 export const authRoutes = Router();
 
@@ -123,4 +125,23 @@ authRoutes.post("/reset", async (req, res) => {
   }
 
   res.json({ reset: true });
+});
+
+authRoutes.patch("/profile", async (req, res) => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const { displayName } = req.body ?? {};
+
+  if (!isDisplayName(displayName)) {
+    res.status(400).json({ error: "Choose a display name of 1-32 characters." });
+    return;
+  }
+
+  if ((await isDisplayNameTaken(displayName, user.id)) || !(await renameUser(user.id, displayName))) {
+    res.status(409).json({ error: "That display name is taken. Try another." });
+    return;
+  }
+
+  res.json({ user: { ...user, displayName: displayName.trim() } });
 });

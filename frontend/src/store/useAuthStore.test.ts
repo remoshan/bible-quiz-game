@@ -44,6 +44,37 @@ test("a rejected reset keeps the screen open with the server's reason", async ()
   expect(useAuthStore.getState().error).toMatch(/expired/);
 });
 
+const session = {
+  accessToken: "tok",
+  refreshToken: "ref",
+  expiresAt: Date.now() + 3_600_000,
+  user: { id: "u1", displayName: "Old Name" },
+};
+
+test("a rename is sent with the player's token and updates the stored name", async () => {
+  useAuthStore.setState({ session });
+  mockRequest.mockResolvedValue({ user: { id: "u1", displayName: "New Name" } });
+
+  expect(await useAuthStore.getState().rename("New Name")).toBe(true);
+
+  expect(mockRequest).toHaveBeenCalledWith("/api/auth/profile", {
+    method: "PATCH",
+    headers: { Authorization: "Bearer tok" },
+    body: JSON.stringify({ displayName: "New Name" }),
+  });
+  expect(useAuthStore.getState().session?.user.displayName).toBe("New Name");
+});
+
+test("a refused rename keeps the old name and shows why", async () => {
+  useAuthStore.setState({ session });
+  mockRequest.mockRejectedValue(new Error("That display name is taken. Try another."));
+
+  expect(await useAuthStore.getState().rename("Taken")).toBe(false);
+
+  expect(useAuthStore.getState().session?.user.displayName).toBe("Old Name");
+  expect(useAuthStore.getState().error).toMatch(/taken/);
+});
+
 test("an expired link never calls the API", async () => {
   useAuthStore.setState({ recovery: { token: null } });
 
