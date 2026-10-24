@@ -285,6 +285,7 @@ already accepts each question exactly once.
 | `POST` | `/api/auth/forgot` | Emails a password reset link. Same reply whether or not the account exists |
 | `POST` | `/api/auth/reset` | Sets a new password, given the token from the reset link |
 | `PATCH` | `/api/auth/profile` | Changes the signed-in player's display name |
+| `DELETE` | `/api/auth/account` | Deletes the signed-in player's account and every score they saved |
 | `GET` | `/api/difficulties` | Question counts and timers, so the UI hard-codes no rules |
 | `POST` | `/api/games` | Starts a round, returns the first question without its answer |
 | `POST` | `/api/games/:gameId/answers` | Grades one answer, returns the score and the next question |
@@ -439,12 +440,13 @@ boundaries, replay and skip-ahead rejection, the event bus including a throwing
 subscriber, the realtime broadcast, the rate limit on starting rounds, and the guarantee
 that a question leaves the server without its answer.
 
-12 frontend tests cover the game store's races — a double tap sending one answer, a quit
+14 frontend tests cover the game store's races — a double tap sending one answer, a quit
 during an in-flight answer staying quit, deadlines re-based for client clock skew, a
 concurrent save posting once, a failed load retrying — the password reset — reading the
 token from the email link, recognising an expired link, never calling the API without a
-token — and a rename updating the stored name only when the server accepts it. Each was
-checked by putting the bug back and watching its test fail.
+token — and the account screen: a rename stored only when the server accepts it, and a
+deletion signing the player out only when it succeeds. Each was checked by putting the bug
+back and watching its test fail.
 
 GitHub Actions runs all of the above, plus the question check, on every push and pull
 request.
@@ -592,6 +594,10 @@ Emails** before relying on reset or confirmation emails at any scale.
 **Account**, next to *Sign out*, lets a signed-in player change their display name under the
 same rules as sign-up. The new name replaces the old one everywhere, past scores included,
 because the leaderboard reads names from `users` rather than storing them per score.
+
+The same screen deletes the account after a confirmation. Removing the Supabase auth user
+cascades through `users` to every `leaderboard` row, so nothing of the player is left
+behind. Open leaderboards drop the player on their next refresh.
 
 ---
 

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  deleteUser,
   isDisplayName,
   isDisplayNameTaken,
   isEmail,
@@ -144,4 +145,13 @@ authRoutes.patch("/profile", async (req, res) => {
   }
 
   res.json({ user: { ...user, displayName: displayName.trim() } });
+});
+
+authRoutes.delete("/account", async (req, res) => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  await deleteUser(user.id);
+
+  res.json({ deleted: true });
 });

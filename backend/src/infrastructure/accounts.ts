@@ -131,6 +131,11 @@ export async function isDisplayNameTaken(displayName: string, ownerId?: string) 
   return (data ?? []).some((row) => row.id !== ownerId);
 }
 
+export async function deleteUser(userId: string) {
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) throw new Error(`Account deletion failed: ${error.message}`);
+}
+
 export async function renameUser(userId: string, displayName: string) {
   const name = displayName.trim();
   const { error } = await supabase.from("users").update({ display_name: name }).eq("id", userId);

@@ -32,6 +32,7 @@ type AuthState = {
   resetPassword: (password: string) => Promise<boolean>;
   endRecovery: () => void;
   rename: (displayName: string) => Promise<boolean>;
+  deleteAccount: () => Promise<boolean>;
 };
 
 const REFRESH_MARGIN_MS = 60_000;
@@ -214,6 +215,32 @@ export const useAuthStore = create<AuthState>()(
           set({
             busy: false,
             error: error instanceof Error ? error.message : "Could not change your display name.",
+          });
+          return false;
+        }
+      },
+
+      deleteAccount: async () => {
+        set({ busy: true, error: null, notice: null });
+
+        const token = await get().accessToken();
+        if (!token) {
+          set({ busy: false, error: "Your session has expired. Please sign in again." });
+          return false;
+        }
+
+        try {
+          await request("/api/auth/account", {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          set({ busy: false, session: null });
+          return true;
+        } catch (error) {
+          set({
+            busy: false,
+            error: error instanceof Error ? error.message : "Could not delete your account.",
           });
           return false;
         }

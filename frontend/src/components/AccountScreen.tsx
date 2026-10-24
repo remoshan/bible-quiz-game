@@ -5,7 +5,7 @@ import { BackIcon } from "@/components/icons";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function AccountScreen({ onBack }: { onBack: () => void }) {
-  const { session, busy, error, notice, rename, clearMessages } = useAuthStore();
+  const { session, busy, error, notice, rename, deleteAccount, clearMessages } = useAuthStore();
   const [displayName, setDisplayName] = useState(session?.user.displayName ?? "");
 
   const leave = () => {
@@ -16,6 +16,12 @@ export function AccountScreen({ onBack }: { onBack: () => void }) {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     await rename(displayName);
+  };
+
+  const remove = async () => {
+    if (window.confirm("Delete your account and every score you have saved? This cannot be undone.")) {
+      await deleteAccount();
+    }
   };
 
   return (
@@ -62,6 +68,20 @@ export function AccountScreen({ onBack }: { onBack: () => void }) {
           {error ? <p className="text-center text-xs text-wrong">{error}</p> : null}
           {notice ? <p className="text-center text-xs text-accent">{notice}</p> : null}
         </form>
+
+        <div className="rule-t mt-10 pt-6">
+          <p className="text-sm text-muted">
+            Deleting your account removes it and every score you have saved. This cannot be undone.
+          </p>
+          <button
+            type="button"
+            onClick={remove}
+            disabled={busy}
+            className="mt-4 w-full border border-[var(--wrong)] py-3 text-sm font-semibold uppercase tracking-[0.16em] text-wrong transition-opacity disabled:opacity-60"
+          >
+            Delete account
+          </button>
+        </div>
       </div>
     </main>
   );

@@ -75,6 +75,29 @@ test("a refused rename keeps the old name and shows why", async () => {
   expect(useAuthStore.getState().error).toMatch(/taken/);
 });
 
+test("deleting the account sends the player's token and signs them out", async () => {
+  useAuthStore.setState({ session });
+  mockRequest.mockResolvedValue({ deleted: true });
+
+  expect(await useAuthStore.getState().deleteAccount()).toBe(true);
+
+  expect(mockRequest).toHaveBeenCalledWith("/api/auth/account", {
+    method: "DELETE",
+    headers: { Authorization: "Bearer tok" },
+  });
+  expect(useAuthStore.getState().session).toBeNull();
+});
+
+test("a failed deletion leaves the player signed in", async () => {
+  useAuthStore.setState({ session });
+  mockRequest.mockRejectedValue(new Error("Something went wrong on the server."));
+
+  expect(await useAuthStore.getState().deleteAccount()).toBe(false);
+
+  expect(useAuthStore.getState().session).toEqual(session);
+  expect(useAuthStore.getState().error).toMatch(/went wrong/);
+});
+
 test("an expired link never calls the API", async () => {
   useAuthStore.setState({ recovery: { token: null } });
 
