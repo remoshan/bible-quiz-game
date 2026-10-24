@@ -16,6 +16,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
   const rank = useGameStore((s) => s.rank);
   const saveError = useGameStore((s) => s.saveError);
   const saveScore = useGameStore((s) => s.saveScore);
+  const missed = useGameStore((s) => s.missed);
 
   const session = useAuthStore((s) => s.session);
 
@@ -84,6 +85,29 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
           <p className="rule-t mt-6 pt-4 text-sm text-wrong">{saveError}</p>
         ) : null}
       </motion.div>
+
+      {missed.length > 0 ? (
+        <details className="rule-t pt-4">
+          <summary className="label cursor-pointer">
+            Review {missed.length} missed {missed.length === 1 ? "question" : "questions"}
+          </summary>
+
+          <ul className="mt-2">
+            {missed.map((item) => (
+              <li key={item.id} className="rule-t py-4 first:border-t-0">
+                <p className="font-serif text-base leading-snug">{item.verse}</p>
+                <p className="mt-2 text-xs text-wrong">
+                  {item.picked === null ? "No answer in time" : `You chose ${item.picked}`}
+                </p>
+                <p className="mt-1 text-xs text-correct">
+                  Answer: <span className="font-semibold">{item.answer}</span>
+                </p>
+                <p className="mt-1 text-2xs text-faint">{item.reference}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       {!session ? (
         <div className="flex flex-col gap-2.5">

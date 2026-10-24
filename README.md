@@ -440,13 +440,19 @@ boundaries, replay and skip-ahead rejection, the event bus including a throwing
 subscriber, the realtime broadcast, the rate limit on starting rounds, and the guarantee
 that a question leaves the server without its answer.
 
-14 frontend tests cover the game store's races — a double tap sending one answer, a quit
-during an in-flight answer staying quit, deadlines re-based for client clock skew, a
-concurrent save posting once, a failed load retrying — the password reset — reading the
-token from the email link, recognising an expired link, never calling the API without a
-token — and the account screen: a rename stored only when the server accepts it, and a
-deletion signing the player out only when it succeeds. Each was checked by putting the bug
-back and watching its test fail.
+16 frontend tests cover:
+
+- **The game store's races** — a double tap sending one answer, a quit during an in-flight
+  answer staying quit, deadlines re-based for client clock skew, a concurrent save posting
+  once, a failed load retrying.
+- **The mistakes review** — a miss recorded with the pick and the answer, a timeout recorded
+  with no pick, a correct answer left out, a new round starting clean.
+- **The password reset** — reading the token from the email link, recognising an expired
+  link, never calling the API without a token.
+- **The account screen** — a rename stored only when the server accepts it, a deletion
+  signing the player out only when it succeeds.
+
+Each was checked by putting the bug back and watching its test fail.
 
 GitHub Actions runs all of the above, plus the question check, on every push and pull
 request.
@@ -579,6 +585,10 @@ Score is `100 per correct answer + 10 per second left on the clock`. Guests play
 an account; finishing a round offers sign-in, and the score saves as soon as the account
 exists. Display names are unique, case-insensitively, and 1–32 characters; the database
 enforces both.
+
+The results screen offers a review of every missed question: the verse, what the player
+chose (or that time ran out), the right answer and its reference. It is built from what the
+server already reveals after each answer, so the review exposes nothing early.
 
 Supabase email confirmation is on by default, so a new account must confirm before signing
 in. Turn it off under **Authentication -> Providers -> Email** if you would rather players
