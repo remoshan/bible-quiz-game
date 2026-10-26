@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BackIcon, LaurelIcon } from "@/components/icons";
+import { BackButton } from "@/components/BackButton";
+import { LaurelIcon } from "@/components/icons";
 import { onScoreSaved } from "@/lib/realtime";
 import { useGameStore } from "@/store/useGameStore";
 import { useLeaderboardStore } from "@/store/useLeaderboardStore";
@@ -46,15 +47,8 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg">
-      <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="-ml-1 flex h-8 w-8 items-center justify-center text-faint transition-colors hover:text-foreground"
-          aria-label="Back"
-        >
-          <BackIcon className="h-4 w-4" />
-        </button>
+      <header className="flex flex-col items-start gap-3">
+        <BackButton onClick={onBack} />
         <h1 className="font-serif text-2xl font-semibold tracking-tight">Leaderboard</h1>
       </header>
 

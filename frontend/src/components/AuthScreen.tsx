@@ -1,20 +1,14 @@
 "use client";
 
 import { AuthPanel } from "@/components/AuthPanel";
-import { BackIcon, OrnamentIcon } from "@/components/icons";
+import { BackButton } from "@/components/BackButton";
+import { OrnamentIcon } from "@/components/icons";
 
 export function AuthScreen({ onBack }: { onBack: () => void }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg">
       <header className="flex shrink-0 items-center">
-        <button
-          type="button"
-          onClick={onBack}
-          className="-ml-1 flex h-8 w-8 items-center justify-center text-faint transition-colors hover:text-foreground"
-          aria-label="Back"
-        >
-          <BackIcon className="h-4 w-4" />
-        </button>
+        <BackButton onClick={onBack} />
       </header>
 
       <div className="flex flex-1 flex-col justify-center py-8">
