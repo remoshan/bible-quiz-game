@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AuthPanel } from "@/components/AuthPanel";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -19,6 +19,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
   const missed = useGameStore((s) => s.missed);
 
   const session = useAuthStore((s) => s.session);
+  const [shareNote, setShareNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (session) void saveScore();
@@ -28,6 +29,26 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
 
   const label = difficulties.find((d) => d.key === summary.difficulty)?.label ?? summary.difficulty;
   const accuracy = Math.round((summary.correctAnswers / summary.totalQuestions) * 100);
+
+  const share = async () => {
+    const text = `I scored ${summary.score} on Verse, a Catholic Bible quiz (${label}, ${summary.correctAnswers}/${summary.totalQuestions} correct). Can you beat it?`;
+    const url = window.location.origin;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Verse", text, url });
+        return;
+      }
+
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setShareNote("Copied");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareNote("Could not share");
+    }
+
+    setTimeout(() => setShareNote(null), 2000);
+  };
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-6 py-8 sm:max-w-lg">
@@ -123,6 +144,14 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
           className="bg-accent px-6 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground"
         >
           Play again
+        </button>
+        <button
+          type="button"
+          onClick={() => void share()}
+          aria-live="polite"
+          className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em]"
+        >
+          {shareNote ?? "Share result"}
         </button>
         <button
           type="button"

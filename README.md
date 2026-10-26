@@ -594,6 +594,9 @@ The results screen offers a review of every missed question: the verse, what the
 chose (or that time ran out), the right answer and its reference. It is built from what the
 server already reveals after each answer, so the review exposes nothing early.
 
+**Share result** opens the device's own share sheet where the browser has one, and copies
+the score, the round and the site's address to the clipboard where it does not.
+
 Supabase email confirmation is on by default, so a new account must confirm before signing
 in. Turn it off under **Authentication -> Providers -> Email** if you would rather players
 start immediately.
