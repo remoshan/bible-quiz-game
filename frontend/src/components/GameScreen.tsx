@@ -40,6 +40,22 @@ export function GameScreen() {
     return () => countdown.stop();
   }, [index, isRevealed, deadline, timeLeft]);
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+
+      const choice = Number(event.key) - 1;
+      const options = useGameStore.getState().question?.options.length ?? 0;
+
+      if (Number.isInteger(choice) && choice >= 0 && choice < options) {
+        void useGameStore.getState().answer(choice);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (!question) return null;
 
   const answerText = isRevealed ? question.options[correctIndex] : "";
@@ -139,10 +155,16 @@ export function GameScreen() {
                 type="button"
                 disabled={isRevealed}
                 onClick={() => void answer(i)}
+                aria-keyshortcuts={String(i + 1)}
                 className="flex w-full items-center justify-between gap-3 py-3.5 pl-3 pr-3 text-left text-base transition-colors active:bg-[var(--tint)]"
                 style={revealStyle}
               >
-                {option}
+                <span>
+                  <span aria-hidden="true" className="mr-3 hidden text-xs tabular-nums text-faint pointer-fine:inline">
+                    {i + 1}
+                  </span>
+                  {option}
+                </span>
                 {isRevealed && (isCorrect || isPicked) ? (
                   <span aria-hidden="true" className="shrink-0 font-semibold">
                     {isCorrect ? "✓" : "✗"}

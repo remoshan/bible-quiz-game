@@ -586,6 +586,10 @@ an account; finishing a round offers sign-in, and the score saves as soon as the
 exists. Display names are unique, case-insensitively, and 1–32 characters; the database
 enforces both.
 
+On a keyboard, **1–4** answer the matching option; a faint number beside each option shows
+which, on devices with a mouse only. Keys go through the same guard as taps, so a second
+press during the reveal is ignored.
+
 The results screen offers a review of every missed question: the verse, what the player
 chose (or that time ran out), the right answer and its reference. It is built from what the
 server already reveals after each answer, so the review exposes nothing early.
