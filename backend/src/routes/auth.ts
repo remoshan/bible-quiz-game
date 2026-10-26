@@ -1,14 +1,20 @@
 import { Router } from "express";
 import {
+  deleteUser,
   isDisplayName,
   isDisplayNameTaken,
   isEmail,
   isPassword,
   refreshSession,
+  renameUser,
+  sendPasswordReset,
+  setPassword,
   signIn,
   signUp,
+  userFromToken,
 } from "../infrastructure/accounts.ts";
-import { signInLimit, signUpLimit } from "./limits.ts";
+import { resetLimit, signInLimit, signUpLimit } from "./limits.ts";
+import { requireUser } from "./session.ts";
 
 export const authRoutes = Router();
 
@@ -82,4 +88,70 @@ authRoutes.post("/refresh", async (req, res) => {
   }
 
   res.json({ session: result.session });
+});
+
+authRoutes.post("/forgot", resetLimit, async (req, res) => {
+  const { email } = req.body ?? {};
+
+  if (!isEmail(email)) {
+    res.status(400).json({ error: "Enter a valid email address." });
+    return;
+  }
+
+  await sendPasswordReset(email);
+
+  res.json({ sent: true });
+});
+
+authRoutes.post("/reset", async (req, res) => {
+  const { accessToken, password } = req.body ?? {};
+
+  if (!isPassword(password)) {
+    res.status(400).json({ error: "Password must be at least 8 characters." });
+    return;
+  }
+
+  const user = typeof accessToken === "string" && accessToken ? await userFromToken(accessToken) : null;
+
+  if (!user) {
+    res.status(401).json({ error: "This reset link has expired. Request a new one." });
+    return;
+  }
+
+  const error = await setPassword(user.id, password);
+
+  if (error) {
+    res.status(400).json({ error });
+    return;
+  }
+
+  res.json({ reset: true });
+});
+
+authRoutes.patch("/profile", async (req, res) => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const { displayName } = req.body ?? {};
+
+  if (!isDisplayName(displayName)) {
+    res.status(400).json({ error: "Choose a display name of 1-32 characters." });
+    return;
+  }
+
+  if ((await isDisplayNameTaken(displayName, user.id)) || !(await renameUser(user.id, displayName))) {
+    res.status(409).json({ error: "That display name is taken. Try another." });
+    return;
+  }
+
+  res.json({ user: { ...user, displayName: displayName.trim() } });
+});
+
+authRoutes.delete("/account", async (req, res) => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  await deleteUser(user.id);
+
+  res.json({ deleted: true });
 });

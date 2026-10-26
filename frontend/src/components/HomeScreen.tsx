@@ -19,9 +19,11 @@ function initialsOf(name: string) {
 export function HomeScreen({
   onOpenLeaderboard,
   onOpenSignIn,
+  onOpenAccount,
 }: {
   onOpenLeaderboard: () => void;
   onOpenSignIn: () => void;
+  onOpenAccount: () => void;
 }) {
   const status = useGameStore((s) => s.status);
   const error = useGameStore((s) => s.error);
@@ -136,8 +138,15 @@ export function HomeScreen({
                 </span>
                 <button
                   type="button"
-                  onClick={signOut}
+                  onClick={onOpenAccount}
                   className="ml-auto underline underline-offset-4 hover:text-foreground"
+                >
+                  Account
+                </button>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="underline underline-offset-4 hover:text-foreground"
                 >
                   Sign out
                 </button>

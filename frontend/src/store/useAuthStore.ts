@@ -14,19 +14,38 @@ type Session = {
   user: AuthUser;
 };
 
+type Recovery = { token: string | null };
+
 type AuthState = {
   session: Session | null;
   busy: boolean;
   error: string | null;
   notice: string | null;
+  recovery: Recovery | null;
   signUp: (email: string, password: string, displayName: string) => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => void;
   accessToken: () => Promise<string | null>;
   clearMessages: () => void;
+  checkRecoveryLink: () => void;
+  requestReset: (email: string) => Promise<boolean>;
+  resetPassword: (password: string) => Promise<boolean>;
+  endRecovery: () => void;
+  rename: (displayName: string) => Promise<boolean>;
+  deleteAccount: () => Promise<boolean>;
 };
 
 const REFRESH_MARGIN_MS = 60_000;
+
+export function recoveryFromHash(hash: string): Recovery | null {
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+  const token = params.get("access_token");
+
+  if (params.get("type") === "recovery" && token) return { token };
+  if (params.has("error_code")) return { token: null };
+
+  return null;
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -35,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
       busy: false,
       error: null,
       notice: null,
+      recovery: null,
 
       signUp: async (email, password, displayName) => {
         set({ busy: true, error: null, notice: null });
@@ -107,6 +127,124 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearMessages: () => set({ error: null, notice: null }),
+
+      checkRecoveryLink: () => {
+        const recovery = recoveryFromHash(window.location.hash);
+        if (!recovery) return;
+
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        set({ recovery, error: null, notice: null });
+      },
+
+      requestReset: async (email) => {
+        set({ busy: true, error: null, notice: null });
+
+        try {
+          await request("/api/auth/forgot", {
+            method: "POST",
+            body: JSON.stringify({ email }),
+          });
+
+          set({
+            busy: false,
+            notice: "If an account exists for that email, a reset link is on its way.",
+          });
+          return true;
+        } catch (error) {
+          set({
+            busy: false,
+            error: error instanceof Error ? error.message : "Could not send the reset link.",
+          });
+          return false;
+        }
+      },
+
+      resetPassword: async (password) => {
+        const token = get().recovery?.token;
+        if (!token) return false;
+
+        set({ busy: true, error: null, notice: null });
+
+        try {
+          await request("/api/auth/reset", {
+            method: "POST",
+            body: JSON.stringify({ accessToken: token, password }),
+          });
+
+          set({
+            busy: false,
+            recovery: null,
+            notice: "Password updated. Sign in with your new password.",
+          });
+          return true;
+        } catch (error) {
+          set({
+            busy: false,
+            error: error instanceof Error ? error.message : "Could not update your password.",
+          });
+          return false;
+        }
+      },
+
+      endRecovery: () => set({ recovery: null, error: null }),
+
+      rename: async (displayName) => {
+        set({ busy: true, error: null, notice: null });
+
+        const token = await get().accessToken();
+        if (!token) {
+          set({ busy: false, error: "Your session has expired. Please sign in again." });
+          return false;
+        }
+
+        try {
+          const body = await request("/api/auth/profile", {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ displayName }),
+          });
+
+          const { session } = get();
+          set({
+            busy: false,
+            notice: "Display name updated.",
+            session: session && { ...session, user: body.user },
+          });
+          return true;
+        } catch (error) {
+          set({
+            busy: false,
+            error: error instanceof Error ? error.message : "Could not change your display name.",
+          });
+          return false;
+        }
+      },
+
+      deleteAccount: async () => {
+        set({ busy: true, error: null, notice: null });
+
+        const token = await get().accessToken();
+        if (!token) {
+          set({ busy: false, error: "Your session has expired. Please sign in again." });
+          return false;
+        }
+
+        try {
+          await request("/api/auth/account", {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          set({ busy: false, session: null });
+          return true;
+        } catch (error) {
+          set({
+            busy: false,
+            error: error instanceof Error ? error.message : "Could not delete your account.",
+          });
+          return false;
+        }
+      },
     }),
     {
       name: "verse-session",

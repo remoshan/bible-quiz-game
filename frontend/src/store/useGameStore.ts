@@ -28,6 +28,14 @@ type Summary = {
   difficulty: Difficulty;
 };
 
+export type Missed = {
+  id: string;
+  verse: string;
+  picked: string | null;
+  answer: string;
+  reference: string;
+};
+
 type GameStatus = "idle" | "loading" | "playing" | "game_over";
 
 type SaveState = "idle" | "saving" | "saved" | "failed";
@@ -48,6 +56,7 @@ type GameState = {
   correctIndex: number | null;
   reference: string | null;
   summary: Summary | null;
+  missed: Missed[];
   saveState: SaveState;
   rank: number | null;
   saveError: string | null;
@@ -71,6 +80,7 @@ const initialGame = {
   correctIndex: null,
   reference: null,
   summary: null,
+  missed: [] as Missed[],
   saveState: "idle" as SaveState,
   rank: null,
   saveError: null,
@@ -197,11 +207,25 @@ export const useGameStore = create<GameState>((set, get) => {
         if (get().gameId !== gameId || get().index !== index) return;
 
         const nextDeadline = outcome.next ? toLocal(outcome.next.deadline, outcome.next.serverNow) : 0;
+        const { question, missed } = get();
 
         set({
           correctIndex: outcome.correctIndex,
           reference: outcome.reference,
           score: outcome.score,
+          missed:
+            outcome.correct || !question
+              ? missed
+              : [
+                  ...missed,
+                  {
+                    id: question.id,
+                    verse: question.verse_text,
+                    picked: choice === null ? null : question.options[choice],
+                    answer: question.options[outcome.correctIndex],
+                    reference: `${outcome.reference} · ${question.translation}`,
+                  },
+                ],
         });
 
         revealTimer = setTimeout(() => {

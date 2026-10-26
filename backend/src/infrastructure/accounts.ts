@@ -103,13 +103,23 @@ export async function refreshSession(refreshToken: string): Promise<AuthResult> 
   return { ok: true, session: toSession(data.session, data.user), requiresConfirmation: false };
 }
 
+export async function sendPasswordReset(email: string) {
+  const { error } = await authClient.auth.resetPasswordForEmail(email);
+  if (error) console.error("Password reset email failed:", error.message);
+}
+
+export async function setPassword(userId: string, password: string) {
+  const { error } = await supabase.auth.admin.updateUserById(userId, { password });
+  return error?.message ?? null;
+}
+
 export async function userFromToken(accessToken: string): Promise<AuthUser | null> {
   const { data, error } = await authClient.auth.getUser(accessToken);
 
   return error || !data.user ? null : toUser(data.user);
 }
 
-export async function isDisplayNameTaken(displayName: string) {
+export async function isDisplayNameTaken(displayName: string, ownerId?: string) {
   const { data, error } = await supabase
     .from("users")
     .select("id")
@@ -118,5 +128,26 @@ export async function isDisplayNameTaken(displayName: string) {
 
   if (error) throw new Error(`Display name lookup failed: ${error.message}`);
 
-  return (data ?? []).length > 0;
+  return (data ?? []).some((row) => row.id !== ownerId);
+}
+
+export async function deleteUser(userId: string) {
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) throw new Error(`Account deletion failed: ${error.message}`);
+}
+
+export async function renameUser(userId: string, displayName: string) {
+  const name = displayName.trim();
+  const { error } = await supabase.from("users").update({ display_name: name }).eq("id", userId);
+
+  if (error?.code === "23505") return false;
+  if (error) throw new Error(`Rename failed: ${error.message}`);
+
+  const { error: metadataError } = await supabase.auth.admin.updateUserById(userId, {
+    user_metadata: { display_name: name },
+  });
+
+  if (metadataError) throw new Error(`Rename failed: ${metadataError.message}`);
+
+  return true;
 }

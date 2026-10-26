@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AuthPanel } from "@/components/AuthPanel";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -16,8 +16,10 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
   const rank = useGameStore((s) => s.rank);
   const saveError = useGameStore((s) => s.saveError);
   const saveScore = useGameStore((s) => s.saveScore);
+  const missed = useGameStore((s) => s.missed);
 
   const session = useAuthStore((s) => s.session);
+  const [shareNote, setShareNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (session) void saveScore();
@@ -27,6 +29,26 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
 
   const label = difficulties.find((d) => d.key === summary.difficulty)?.label ?? summary.difficulty;
   const accuracy = Math.round((summary.correctAnswers / summary.totalQuestions) * 100);
+
+  const share = async () => {
+    const text = `I scored ${summary.score} on Verse, a Catholic Bible quiz (${label}, ${summary.correctAnswers}/${summary.totalQuestions} correct). Can you beat it?`;
+    const url = window.location.origin;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Verse", text, url });
+        return;
+      }
+
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setShareNote("Copied");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareNote("Could not share");
+    }
+
+    setTimeout(() => setShareNote(null), 2000);
+  };
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-6 py-8 sm:max-w-lg">
@@ -85,6 +107,29 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
         ) : null}
       </motion.div>
 
+      {missed.length > 0 ? (
+        <details className="rule-t pt-4">
+          <summary className="label cursor-pointer">
+            Review {missed.length} missed {missed.length === 1 ? "question" : "questions"}
+          </summary>
+
+          <ul className="mt-2">
+            {missed.map((item) => (
+              <li key={item.id} className="rule-t py-4 first:border-t-0">
+                <p className="font-serif text-base leading-snug">{item.verse}</p>
+                <p className="mt-2 text-xs text-wrong">
+                  {item.picked === null ? "No answer in time" : `You chose ${item.picked}`}
+                </p>
+                <p className="mt-1 text-xs text-correct">
+                  Answer: <span className="font-semibold">{item.answer}</span>
+                </p>
+                <p className="mt-1 text-2xs text-faint">{item.reference}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
       {!session ? (
         <div className="flex flex-col gap-2.5">
           <p className="text-sm text-muted">Sign in to save this score to the leaderboard.</p>
@@ -99,6 +144,14 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
           className="bg-accent px-6 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground"
         >
           Play again
+        </button>
+        <button
+          type="button"
+          onClick={() => void share()}
+          aria-live="polite"
+          className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em]"
+        >
+          {shareNote ?? "Share result"}
         </button>
         <button
           type="button"

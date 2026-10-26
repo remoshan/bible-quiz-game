@@ -17,6 +17,12 @@ export const signUpLimit = limit(
   "Too many sign-up attempts. Please try again in an hour."
 );
 
+export const resetLimit = limit(
+  60 * 60_000,
+  5,
+  "Too many reset requests. Please try again in an hour."
+);
+
 export const signInLimit = limit(
   15 * 60_000,
   20,

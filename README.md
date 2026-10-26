@@ -197,7 +197,7 @@ Run these in the Supabase SQL editor, in order, on a **new** project:
 | File | Purpose |
 |---|---|
 | `backend/sql/schema.sql` | Tables, indexes, row-level security, the new-user trigger, and the quiz and ranking functions |
-| `backend/sql/seed.sql` | 75 CPDV questions across three difficulties |
+| `backend/sql/seed.sql` | 150 CPDV questions across three difficulties |
 
 `schema.sql` runs once. On a database that already has the tables it fails with
 `relation "users" already exists` — that is the script doing its job, not a bug. Later
@@ -259,6 +259,11 @@ question or answer, write a score, or rename a player; every write goes through 
 **Leave both Supabase values blank and the app still runs** — the leaderboard simply
 refreshes on load instead of live.
 
+`next.config.ts` builds the page's Content-Security-Policy from `NEXT_PUBLIC_API_URL` and
+`NEXT_PUBLIC_SUPABASE_URL`: the browser may connect only to the site itself, the API and
+Supabase Realtime. Change either value and redeploy, or the browser will refuse the new
+address.
+
 ---
 
 ## API reference
@@ -266,8 +271,8 @@ refreshes on load instead of live.
 Only the backend talks to the database. Every route below is the browser's sole source of
 game state.
 
-Starting a round, signing up and signing in are rate-limited per client IP — 30 a minute,
-5 an hour and 20 per 15 minutes respectively. Past the limit the API answers `429` with a
+Starting a round, signing up, signing in and requesting a reset link are rate-limited per
+client IP — 30 a minute, 5 an hour, 20 per 15 minutes and 5 an hour respectively. Past the limit the API answers `429` with a
 readable `error` and standard `RateLimit` headers. Answering is not limited; the session
 already accepts each question exactly once.
 
@@ -277,6 +282,10 @@ already accepts each question exactly once.
 | `POST` | `/api/auth/signup` | Creates an account and returns a session |
 | `POST` | `/api/auth/signin` | Exchanges email and password for a session |
 | `POST` | `/api/auth/refresh` | Trades a refresh token for a fresh session |
+| `POST` | `/api/auth/forgot` | Emails a password reset link. Same reply whether or not the account exists |
+| `POST` | `/api/auth/reset` | Sets a new password, given the token from the reset link |
+| `PATCH` | `/api/auth/profile` | Changes the signed-in player's display name |
+| `DELETE` | `/api/auth/account` | Deletes the signed-in player's account and every score they saved |
 | `GET` | `/api/difficulties` | Question counts and timers, so the UI hard-codes no rules |
 | `POST` | `/api/games` | Starts a round, returns the first question without its answer |
 | `POST` | `/api/games/:gameId/answers` | Grades one answer, returns the score and the next question |
@@ -377,11 +386,19 @@ leaksAnswer: False
 
 An anon-level read of `questions` returns `[]`, and `get_quiz` returns
 `permission denied for function`. The same calls with the service role succeed. Bank
-intact at easy 20 / medium 25 / hard 30.
+intact at easy 40 / medium 50 / hard 60.
 
 No table has a policy, so a signed-in player's token gets no further than the anon key. A
 40-character display name is refused by the database itself (`23514`, check violation),
 even through the service role.
+
+### Browser security headers
+
+Every page carries a Content-Security-Policy and `X-Content-Type-Options: nosniff`. The
+page cannot be framed (`frame-ancestors 'none'`), and loads scripts, styles and fonts only
+from its own origin. A full round, the results screen and the leaderboard raise no
+violations; a socket to an unlisted host is blocked. `unsafe-eval` is added in development
+only, for React's dev tooling.
 
 ### Domain events fire on real requests
 
@@ -405,7 +422,7 @@ cd backend && npm run verify:questions
 ```
 
 ```
-75 questions verified against the CPDV text.
+150 questions verified against the CPDV text.
 ```
 
 ### Tests and build
@@ -423,10 +440,19 @@ boundaries, replay and skip-ahead rejection, the event bus including a throwing
 subscriber, the realtime broadcast, the rate limit on starting rounds, and the guarantee
 that a question leaves the server without its answer.
 
-6 frontend tests cover the game store's races: a double tap sending one answer, a quit
-during an in-flight answer staying quit, deadlines re-based for client clock skew, a
-concurrent save posting once, and a failed load retrying. Each was checked by putting the
-original bug back and watching its test fail.
+16 frontend tests cover:
+
+- **The game store's races** — a double tap sending one answer, a quit during an in-flight
+  answer staying quit, deadlines re-based for client clock skew, a concurrent save posting
+  once, a failed load retrying.
+- **The mistakes review** — a miss recorded with the pick and the answer, a timeout recorded
+  with no pick, a correct answer left out, a new round starting clean.
+- **The password reset** — reading the token from the email link, recognising an expired
+  link, never calling the API without a token.
+- **The account screen** — a rename stored only when the server accepts it, a deletion
+  signing the player out only when it succeeds.
+
+Each was checked by putting the bug back and watching its test fail.
 
 GitHub Actions runs all of the above, plus the question check, on every push and pull
 request.
@@ -483,7 +509,7 @@ text. `verify-questions.ts` pulls the wording from the CPDV dataset and generate
 `sql/seed.sql`, so misquoting Scripture is structurally impossible rather than a matter of
 proofreading.
 
-The check asserts, for all 75 questions, that the verse matches the source word for word,
+The check asserts, for all 150 questions, that the verse matches the source word for word,
 that a fill-in-the-blank restores to the original verse, that a guess-the-book answer
 really is that book, that **no verse gives away its own answer**, and that `seed.sql` is
 still in step with the bank. That last rule caught two live defects: Judges 6:12 names its
@@ -544,7 +570,7 @@ LICENSE                       MIT
 | `npm run typecheck` | `tsc --noEmit` (both apps) |
 | `npm run lint` | ESLint (frontend) |
 | `npm run build` | Production build (frontend) |
-| `npm run verify:questions` | Check all 75 questions against the CPDV text |
+| `npm run verify:questions` | Check all 150 questions against the CPDV text |
 | `npm run seed:write` | Regenerate `sql/seed.sql` from the question bank |
 
 ### Game rules
@@ -560,9 +586,35 @@ an account; finishing a round offers sign-in, and the score saves as soon as the
 exists. Display names are unique, case-insensitively, and 1–32 characters; the database
 enforces both.
 
+On a keyboard, **1–4** answer the matching option; a faint number beside each option shows
+which, on devices with a mouse only. Keys go through the same guard as taps, so a second
+press during the reveal is ignored.
+
+The results screen offers a review of every missed question: the verse, what the player
+chose (or that time ran out), the right answer and its reference. It is built from what the
+server already reveals after each answer, so the review exposes nothing early.
+
+**Share result** opens the device's own share sheet where the browser has one, and copies
+the score, the round and the site's address to the clipboard where it does not.
+
 Supabase email confirmation is on by default, so a new account must confirm before signing
 in. Turn it off under **Authentication -> Providers -> Email** if you would rather players
 start immediately.
+
+**Forgot password?** on the sign-in form emails a reset link. The link returns to the
+**Site URL** under **Authentication -> URL Configuration**, so that must be the address the
+game is served from. The page reads the token from the link, removes it from the address
+bar, and asks for a new password. Supabase's built-in email sender allows only a few
+messages an hour across the whole project; connect your own SMTP under **Authentication ->
+Emails** before relying on reset or confirmation emails at any scale.
+
+**Account**, next to *Sign out*, lets a signed-in player change their display name under the
+same rules as sign-up. The new name replaces the old one everywhere, past scores included,
+because the leaderboard reads names from `users` rather than storing them per score.
+
+The same screen deletes the account after a confirmation. Removing the Supabase auth user
+cascades through `users` to every `leaderboard` row, so nothing of the player is left
+behind. Open leaderboards drop the player on their next refresh.
 
 ---
 
@@ -582,9 +634,14 @@ receives it and will show a stale board until something else triggers a refetch.
 no replay. Acceptable for a leaderboard; anything that mattered would want Redis Streams
 or a queue with acknowledgements.
 
+**A reset accepts any live session token.** Supabase marks a reset link's session the same
+way as other email links, so `/api/auth/reset` cannot tell it from an ordinary sign-in and
+does not ask for the old password. That matches Supabase's own default for changing a
+password; a token is short-lived and never leaves the player's browser.
+
 **Speaker attribution is not machine-checked.** The verifier proves the verse text, the
 blanked word and the book. Who *said* a line is an editorial judgement made by hand across
-23 questions — the one part of the bank a script cannot defend.
+47 questions — the one part of the bank a script cannot defend.
 
 **Frontend tests stop at the store.** The game store's async logic is covered, but no
 component is rendered in a test; the screens are exercised by hand in a real browser.
