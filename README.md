@@ -386,7 +386,7 @@ leaksAnswer: False
 
 An anon-level read of `questions` returns `[]`, and `get_quiz` returns
 `permission denied for function`. The same calls with the service role succeed. Bank
-intact at easy 20 / medium 25 / hard 30.
+intact at easy 40 / medium 50 / hard 60.
 
 No table has a policy, so a signed-in player's token gets no further than the anon key. A
 40-character display name is refused by the database itself (`23514`, check violation),
