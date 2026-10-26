@@ -197,7 +197,7 @@ Run these in the Supabase SQL editor, in order, on a **new** project:
 | File | Purpose |
 |---|---|
 | `backend/sql/schema.sql` | Tables, indexes, row-level security, the new-user trigger, and the quiz and ranking functions |
-| `backend/sql/seed.sql` | 75 CPDV questions across three difficulties |
+| `backend/sql/seed.sql` | 150 CPDV questions across three difficulties |
 
 `schema.sql` runs once. On a database that already has the tables it fails with
 `relation "users" already exists` — that is the script doing its job, not a bug. Later
@@ -422,7 +422,7 @@ cd backend && npm run verify:questions
 ```
 
 ```
-75 questions verified against the CPDV text.
+150 questions verified against the CPDV text.
 ```
 
 ### Tests and build
@@ -509,7 +509,7 @@ text. `verify-questions.ts` pulls the wording from the CPDV dataset and generate
 `sql/seed.sql`, so misquoting Scripture is structurally impossible rather than a matter of
 proofreading.
 
-The check asserts, for all 75 questions, that the verse matches the source word for word,
+The check asserts, for all 150 questions, that the verse matches the source word for word,
 that a fill-in-the-blank restores to the original verse, that a guess-the-book answer
 really is that book, that **no verse gives away its own answer**, and that `seed.sql` is
 still in step with the bank. That last rule caught two live defects: Judges 6:12 names its
@@ -570,7 +570,7 @@ LICENSE                       MIT
 | `npm run typecheck` | `tsc --noEmit` (both apps) |
 | `npm run lint` | ESLint (frontend) |
 | `npm run build` | Production build (frontend) |
-| `npm run verify:questions` | Check all 75 questions against the CPDV text |
+| `npm run verify:questions` | Check all 150 questions against the CPDV text |
 | `npm run seed:write` | Regenerate `sql/seed.sql` from the question bank |
 
 ### Game rules
@@ -641,7 +641,7 @@ password; a token is short-lived and never leaves the player's browser.
 
 **Speaker attribution is not machine-checked.** The verifier proves the verse text, the
 blanked word and the book. Who *said* a line is an editorial judgement made by hand across
-23 questions — the one part of the bank a script cannot defend.
+47 questions — the one part of the bank a script cannot defend.
 
 **Frontend tests stop at the store.** The game store's async logic is covered, but no
 component is rendered in a test; the screens are exercised by hand in a real browser.
