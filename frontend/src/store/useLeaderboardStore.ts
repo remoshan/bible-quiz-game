@@ -49,15 +49,10 @@ export const useLeaderboardStore = create<LeaderboardState>((set, get) => ({
   load: async (live) => {
     const ticket = (latestRequest += 1);
     const { difficulty } = get();
-    const token = useAuthStore.getState().session
-      ? await useAuthStore.getState().accessToken()
-      : null;
+    const token = await useAuthStore.getState().accessToken();
 
     try {
-      const body = await request(
-        `/api/leaderboard?difficulty=${difficulty}&limit=${PAGE_SIZE}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
-      );
+      const body = await request(`/api/leaderboard?difficulty=${difficulty}&limit=${PAGE_SIZE}`, { token });
 
       if (ticket !== latestRequest || get().difficulty !== difficulty) return;
 

@@ -49,203 +49,119 @@ export function recoveryFromHash(hash: string): Recovery | null {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
-      session: null,
-      busy: false,
-      error: null,
-      notice: null,
-      recovery: null,
-
-      signUp: async (email, password, displayName) => {
+    (set, get) => {
+      const act = async (fallback: string, work: () => Promise<Partial<AuthState>>) => {
         set({ busy: true, error: null, notice: null });
 
         try {
-          const body = await request("/api/auth/signup", {
-            method: "POST",
-            body: JSON.stringify({ email, password, displayName }),
-          });
+          set({ busy: false, ...(await work()) });
+          return true;
+        } catch (error) {
+          set({ busy: false, error: error instanceof Error ? error.message : fallback });
+          return false;
+        }
+      };
 
-          if (body.requiresConfirmation) {
-            set({
-              busy: false,
-              notice: "Check your inbox to confirm your email, then sign in.",
+      const token = async () => {
+        const value = await get().accessToken();
+        if (!value) throw new Error("Your session has expired. Please sign in again.");
+        return value;
+      };
+
+      return {
+        session: null,
+        busy: false,
+        error: null,
+        notice: null,
+        recovery: null,
+
+        signUp: async (email, password, displayName) =>
+          (await act("Could not create your account.", async () => {
+            const body = await request("/api/auth/signup", {
+              method: "POST",
+              body: { email, password, displayName },
             });
-            return false;
-          }
 
-          set({ session: body.session, busy: false });
-          return true;
-        } catch (error) {
-          set({
-            busy: false,
-            error: error instanceof Error ? error.message : "Could not create your account.",
-          });
-          return false;
-        }
-      },
+            return body.requiresConfirmation
+              ? { notice: "Check your inbox to confirm your email, then sign in." }
+              : { session: body.session };
+          })) && get().session !== null,
 
-      signIn: async (email, password) => {
-        set({ busy: true, error: null, notice: null });
+        signIn: (email, password) =>
+          act("Could not sign you in.", async () => {
+            const body = await request("/api/auth/signin", { method: "POST", body: { email, password } });
+            return { session: body.session };
+          }),
 
-        try {
-          const body = await request("/api/auth/signin", {
-            method: "POST",
-            body: JSON.stringify({ email, password }),
-          });
+        signOut: () => set({ session: null, error: null, notice: null }),
 
-          set({ session: body.session, busy: false });
-          return true;
-        } catch (error) {
-          set({
-            busy: false,
-            error: error instanceof Error ? error.message : "Could not sign you in.",
-          });
-          return false;
-        }
-      },
-
-      signOut: () => set({ session: null, error: null, notice: null }),
-
-      accessToken: async () => {
-        const { session } = get();
-        if (!session) return null;
-
-        if (session.expiresAt - REFRESH_MARGIN_MS > Date.now()) return session.accessToken;
-
-        try {
-          const body = await request("/api/auth/refresh", {
-            method: "POST",
-            body: JSON.stringify({ refreshToken: session.refreshToken }),
-          });
-
-          set({ session: body.session });
-          return body.session.accessToken as string;
-        } catch {
-          set({ session: null });
-          return null;
-        }
-      },
-
-      clearMessages: () => set({ error: null, notice: null }),
-
-      checkRecoveryLink: () => {
-        const recovery = recoveryFromHash(window.location.hash);
-        if (!recovery) return;
-
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        set({ recovery, error: null, notice: null });
-      },
-
-      requestReset: async (email) => {
-        set({ busy: true, error: null, notice: null });
-
-        try {
-          await request("/api/auth/forgot", {
-            method: "POST",
-            body: JSON.stringify({ email }),
-          });
-
-          set({
-            busy: false,
-            notice: "If an account exists for that email, a reset link is on its way.",
-          });
-          return true;
-        } catch (error) {
-          set({
-            busy: false,
-            error: error instanceof Error ? error.message : "Could not send the reset link.",
-          });
-          return false;
-        }
-      },
-
-      resetPassword: async (password) => {
-        const token = get().recovery?.token;
-        if (!token) return false;
-
-        set({ busy: true, error: null, notice: null });
-
-        try {
-          await request("/api/auth/reset", {
-            method: "POST",
-            body: JSON.stringify({ accessToken: token, password }),
-          });
-
-          set({
-            busy: false,
-            recovery: null,
-            notice: "Password updated. Sign in with your new password.",
-          });
-          return true;
-        } catch (error) {
-          set({
-            busy: false,
-            error: error instanceof Error ? error.message : "Could not update your password.",
-          });
-          return false;
-        }
-      },
-
-      endRecovery: () => set({ recovery: null, error: null }),
-
-      rename: async (displayName) => {
-        set({ busy: true, error: null, notice: null });
-
-        const token = await get().accessToken();
-        if (!token) {
-          set({ busy: false, error: "Your session has expired. Please sign in again." });
-          return false;
-        }
-
-        try {
-          const body = await request("/api/auth/profile", {
-            method: "PATCH",
-            headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ displayName }),
-          });
-
+        accessToken: async () => {
           const { session } = get();
-          set({
-            busy: false,
-            notice: "Display name updated.",
-            session: session && { ...session, user: body.user },
-          });
-          return true;
-        } catch (error) {
-          set({
-            busy: false,
-            error: error instanceof Error ? error.message : "Could not change your display name.",
-          });
-          return false;
-        }
-      },
+          if (!session) return null;
 
-      deleteAccount: async () => {
-        set({ busy: true, error: null, notice: null });
+          if (session.expiresAt - REFRESH_MARGIN_MS > Date.now()) return session.accessToken;
 
-        const token = await get().accessToken();
-        if (!token) {
-          set({ busy: false, error: "Your session has expired. Please sign in again." });
-          return false;
-        }
+          try {
+            const body = await request("/api/auth/refresh", {
+              method: "POST",
+              body: { refreshToken: session.refreshToken },
+            });
 
-        try {
-          await request("/api/auth/account", {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
+            set({ session: body.session });
+            return body.session.accessToken as string;
+          } catch {
+            set({ session: null });
+            return null;
+          }
+        },
+
+        clearMessages: () => set({ error: null, notice: null }),
+
+        checkRecoveryLink: () => {
+          const recovery = recoveryFromHash(window.location.hash);
+          if (!recovery) return;
+
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          set({ recovery, error: null, notice: null });
+        },
+
+        requestReset: (email) =>
+          act("Could not send the reset link.", async () => {
+            await request("/api/auth/forgot", { method: "POST", body: { email } });
+            return { notice: "If an account exists for that email, a reset link is on its way." };
+          }),
+
+        resetPassword: async (password) => {
+          const accessToken = get().recovery?.token;
+          if (!accessToken) return false;
+
+          return act("Could not update your password.", async () => {
+            await request("/api/auth/reset", { method: "POST", body: { accessToken, password } });
+            return { recovery: null, notice: "Password updated. Sign in with your new password." };
           });
+        },
 
-          set({ busy: false, session: null });
-          return true;
-        } catch (error) {
-          set({
-            busy: false,
-            error: error instanceof Error ? error.message : "Could not delete your account.",
-          });
-          return false;
-        }
-      },
-    }),
+        endRecovery: () => set({ recovery: null, error: null }),
+
+        rename: (displayName) =>
+          act("Could not change your display name.", async () => {
+            const body = await request("/api/auth/profile", {
+              method: "PATCH",
+              body: { displayName },
+              token: await token(),
+            });
+
+            const { session } = get();
+            return { notice: "Display name updated.", session: session && { ...session, user: body.user } };
+          }),
+
+        deleteAccount: () =>
+          act("Could not delete your account.", async () => {
+            await request("/api/auth/account", { method: "DELETE", token: await token() });
+            return { session: null };
+          }),
+      };
+    },
     {
       name: "verse-session",
       partialize: (state) => ({ session: state.session }),
