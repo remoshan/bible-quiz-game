@@ -18,6 +18,16 @@ import { requireUser } from "./session.ts";
 
 export const authRoutes = Router();
 
+const NAME_TAKEN = { status: 409, error: "That display name is taken. Try another." };
+
+async function displayNameProblem(displayName: unknown, ownerId?: string) {
+  if (!isDisplayName(displayName)) {
+    return { status: 400, error: "Choose a display name of 1-32 characters." };
+  }
+
+  return (await isDisplayNameTaken(displayName, ownerId)) ? NAME_TAKEN : null;
+}
+
 authRoutes.post("/signup", signUpLimit, async (req, res) => {
   const { email, password, displayName } = req.body ?? {};
 
@@ -31,13 +41,10 @@ authRoutes.post("/signup", signUpLimit, async (req, res) => {
     return;
   }
 
-  if (!isDisplayName(displayName)) {
-    res.status(400).json({ error: "Choose a display name of 1-32 characters." });
-    return;
-  }
+  const problem = await displayNameProblem(displayName);
 
-  if (await isDisplayNameTaken(displayName)) {
-    res.status(409).json({ error: "That display name is taken. Try another." });
+  if (problem) {
+    res.status(problem.status).json({ error: problem.error });
     return;
   }
 
@@ -134,13 +141,12 @@ authRoutes.patch("/profile", async (req, res) => {
 
   const { displayName } = req.body ?? {};
 
-  if (!isDisplayName(displayName)) {
-    res.status(400).json({ error: "Choose a display name of 1-32 characters." });
-    return;
-  }
+  const problem =
+    (await displayNameProblem(displayName, user.id)) ??
+    ((await renameUser(user.id, displayName)) ? null : NAME_TAKEN);
 
-  if ((await isDisplayNameTaken(displayName, user.id)) || !(await renameUser(user.id, displayName))) {
-    res.status(409).json({ error: "That display name is taken. Try another." });
+  if (problem) {
+    res.status(problem.status).json({ error: problem.error });
     return;
   }
 
