@@ -126,10 +126,7 @@ export const useGameStore = create<GameState>((set, get) => {
       }
 
       try {
-        const body = await request(`/api/games/${gameId}/save`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const body = await request(`/api/games/${gameId}/save`, { method: "POST", token });
 
         set({ saveState: "saved", rank: body.rank });
       } catch (error) {
@@ -158,10 +155,7 @@ export const useGameStore = create<GameState>((set, get) => {
       set({ ...initialGame, status: "loading", difficulty, error: null });
 
       try {
-        const game = await request("/api/games", {
-          method: "POST",
-          body: JSON.stringify({ difficulty }),
-        });
+        const game = await request("/api/games", { method: "POST", body: { difficulty } });
 
         if (get().status !== "loading" || get().difficulty !== difficulty) return;
 
@@ -201,7 +195,7 @@ export const useGameStore = create<GameState>((set, get) => {
       try {
         const outcome = await request(`/api/games/${gameId}/answers`, {
           method: "POST",
-          body: JSON.stringify({ index, choice }),
+          body: { index, choice },
         });
 
         if (get().gameId !== gameId || get().index !== index) return;

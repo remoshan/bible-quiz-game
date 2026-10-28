@@ -87,6 +87,14 @@
   border-bottom: 1px solid var(--rule);
 }
 
+@utility field {
+  @apply border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent;
+}
+
+@utility button-primary {
+  @apply bg-accent py-3 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground transition-opacity disabled:opacity-60;
+}
+
 @utility label {
   font-size: var(--text-2xs);
   font-weight: 600;

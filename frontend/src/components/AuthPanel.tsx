@@ -14,9 +14,6 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
   const isSignUp = mode === "signup";
   const isForgot = mode === "forgot";
 
-  const field =
-    "border border-rule bg-transparent px-3.5 py-3 text-base outline-none placeholder:text-faint focus:border-accent";
-
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -49,7 +46,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
           autoComplete="nickname"
           maxLength={32}
           required
-          className={field}
+          className="field"
         />
       ) : null}
 
@@ -61,7 +58,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         aria-label="Email"
         autoComplete="email"
         required
-        className={field}
+        className="field"
       />
 
       {isForgot ? null : (
@@ -73,15 +70,11 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
           aria-label="Password"
           autoComplete={isSignUp ? "new-password" : "current-password"}
           required
-          className={field}
+          className="field"
         />
       )}
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="bg-accent py-3 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground transition-opacity disabled:opacity-60"
-      >
+      <button type="submit" disabled={busy} className="button-primary">
         {busy ? "Working…" : isForgot ? "Send reset link" : isSignUp ? "Create account" : "Sign in"}
       </button>
 

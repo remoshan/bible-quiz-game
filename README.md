@@ -440,13 +440,15 @@ boundaries, replay and skip-ahead rejection, the event bus including a throwing
 subscriber, the realtime broadcast, the rate limit on starting rounds, and the guarantee
 that a question leaves the server without its answer.
 
-16 frontend tests cover:
+18 frontend tests cover:
 
 - **The game store's races** — a double tap sending one answer, a quit during an in-flight
   answer staying quit, deadlines re-based for client clock skew, a concurrent save posting
   once, a failed load retrying.
 - **The mistakes review** — a miss recorded with the pick and the answer, a timeout
   recorded with no pick, a correct answer left out, a new round starting clean.
+- **Signing in** — a sign-up awaiting email confirmation staying signed out, a sign-in
+  storing the server's session.
 - **The password reset** — reading the token from the email link, recognising an expired
   link, never calling the API without a token.
 - **The account screen** — a rename stored only when the server accepts it, a deletion

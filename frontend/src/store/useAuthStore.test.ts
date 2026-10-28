@@ -28,7 +28,7 @@ test("a new password is sent with the link's token and ends recovery", async () 
 
   expect(mockRequest).toHaveBeenCalledWith("/api/auth/reset", {
     method: "POST",
-    body: JSON.stringify({ accessToken: "abc", password: "new-password" }),
+    body: { accessToken: "abc", password: "new-password" },
   });
   expect(useAuthStore.getState().recovery).toBeNull();
   expect(useAuthStore.getState().notice).toMatch(/Password updated/);
@@ -59,8 +59,8 @@ test("a rename is sent with the player's token and updates the stored name", asy
 
   expect(mockRequest).toHaveBeenCalledWith("/api/auth/profile", {
     method: "PATCH",
-    headers: { Authorization: "Bearer tok" },
-    body: JSON.stringify({ displayName: "New Name" }),
+    body: { displayName: "New Name" },
+    token: "tok",
   });
   expect(useAuthStore.getState().session?.user.displayName).toBe("New Name");
 });
@@ -83,7 +83,7 @@ test("deleting the account sends the player's token and signs them out", async (
 
   expect(mockRequest).toHaveBeenCalledWith("/api/auth/account", {
     method: "DELETE",
-    headers: { Authorization: "Bearer tok" },
+    token: "tok",
   });
   expect(useAuthStore.getState().session).toBeNull();
 });
@@ -103,4 +103,28 @@ test("an expired link never calls the API", async () => {
 
   expect(await useAuthStore.getState().resetPassword("new-password")).toBe(false);
   expect(mockRequest).not.toHaveBeenCalled();
+});
+
+test("a sign-up awaiting email confirmation stays signed out and says to check the inbox", async () => {
+  useAuthStore.setState({ session: null });
+  mockRequest.mockResolvedValue({ session: null, requiresConfirmation: true });
+
+  expect(await useAuthStore.getState().signUp("a@b.co", "password1", "Name")).toBe(false);
+
+  expect(useAuthStore.getState().session).toBeNull();
+  expect(useAuthStore.getState().notice).toMatch(/inbox/);
+  expect(useAuthStore.getState().busy).toBe(false);
+});
+
+test("a sign-in stores the session the server returns", async () => {
+  useAuthStore.setState({ session: null });
+  mockRequest.mockResolvedValue({ session });
+
+  expect(await useAuthStore.getState().signIn("a@b.co", "password1")).toBe(true);
+
+  expect(mockRequest).toHaveBeenCalledWith("/api/auth/signin", {
+    method: "POST",
+    body: { email: "a@b.co", password: "password1" },
+  });
+  expect(useAuthStore.getState().session).toEqual(session);
 });
