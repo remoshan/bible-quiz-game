@@ -469,8 +469,9 @@ Measured in a real browser at 375 x 812:
 
 | | |
 |---|---|
-| Initial JavaScript | 631 KB across 8 scripts |
-| Leaderboard + realtime | 61 KB, fetched only when the board is opened |
+| Initial JavaScript | 614 KB across 8 scripts — 190 KB gzipped |
+| Game and results screens | 7 KB gzipped each, fetched in the background after first paint |
+| Leaderboard, realtime and layout animation | Fetched only when the board is opened |
 | Game screen | No scroll; all four answers on screen |
 | Pinch-zoom | Not blocked |
 
@@ -535,6 +536,16 @@ The browser also loads `@supabase/realtime-js` rather than `@supabase/supabase-j
 full client bundles Postgres, auth, storage and edge-function modules the UI never touches;
 dropping them cut the largest chunk from 400 KB to 220 KB. `LeaderboardScreen` is then
 loaded on demand, so even that is paid only by players who open the board.
+
+### Animation code loads only where it is used
+
+The home screen animates with CSS alone, so Framer Motion stays off the first paint.
+`providers.tsx` wraps the app in `LazyMotion strict` with the basic feature set loaded
+asynchronously, and every component uses the lightweight `m` element — `strict` makes any
+stray full `motion` element throw instead of silently pulling the whole library back in.
+Only `LeaderboardScreen` needs layout animation for re-ordering rows, so it loads the full
+feature set itself, inside its own on-demand chunk. Together with loading the game and
+results screens on demand, this cut first-load JavaScript from 234 KB to 190 KB gzipped.
 
 ### Reduced motion is honoured once, centrally
 

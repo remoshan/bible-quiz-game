@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { GameScreen } from "@/components/GameScreen";
 import { HomeScreen } from "@/components/HomeScreen";
-import { ResultsScreen } from "@/components/ResultsScreen";
 import { ThemeControl } from "@/components/ThemeControl";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGameStore } from "@/store/useGameStore";
+
+const loadGame = () => import("@/components/GameScreen").then((m) => m.GameScreen);
+const loadResults = () => import("@/components/ResultsScreen").then((m) => m.ResultsScreen);
+
+const GameScreen = dynamic(loadGame, { ssr: false });
+const ResultsScreen = dynamic(loadResults, { ssr: false });
 
 const LeaderboardScreen = dynamic(
   () => import("@/components/LeaderboardScreen").then((m) => m.LeaderboardScreen),
@@ -38,6 +42,8 @@ export default function Page() {
 
   useEffect(() => {
     checkRecoveryLink();
+    void loadGame();
+    void loadResults();
   }, [checkRecoveryLink]);
 
   const close = () => setOverlay(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { AuthPanel } from "@/components/AuthPanel";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGameStore } from "@/store/useGameStore";
@@ -50,7 +50,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-6 py-8 sm:max-w-lg">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 26 }}
@@ -58,14 +58,14 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
       >
         <p className="label">{label} round complete</p>
 
-        <motion.p
+        <m.p
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 240, damping: 18, delay: 0.12 }}
           className="mt-4 font-serif text-5xl font-semibold leading-none tracking-tight tabular-nums text-accent"
         >
           {summary.score}
-        </motion.p>
+        </m.p>
 
         <div className="rule-t mt-8 grid grid-cols-3 pt-5">
           <div>
@@ -87,13 +87,13 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
         </div>
 
         {saveState === "saved" ? (
-          <motion.p
+          <m.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="rule-t mt-6 pt-4 text-sm font-semibold text-correct"
           >
             Saved to the leaderboard{rank ? ` · rank #${rank}` : ""}
-          </motion.p>
+          </m.p>
         ) : null}
 
         {saveState === "saving" ? (
@@ -103,7 +103,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
         {saveState === "failed" ? (
           <p className="rule-t mt-6 pt-4 text-sm text-wrong">{saveError}</p>
         ) : null}
-      </motion.div>
+      </m.div>
 
       {summary.review.length > 0 ? (
         <details className="rule-t pt-4">

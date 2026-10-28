@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, domMax, m } from "framer-motion";
 import { BackButton } from "@/components/BackButton";
 import { LaurelIcon } from "@/components/icons";
 import { onScoreSaved } from "@/lib/realtime";
@@ -44,83 +44,85 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
   );
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg">
-      <header className="flex flex-col items-start gap-3">
-        <BackButton onClick={onBack} />
-        <h1 className="font-serif text-2xl font-semibold tracking-tight">Leaderboard</h1>
-      </header>
+    <LazyMotion features={domMax}>
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg">
+        <header className="flex flex-col items-start gap-3">
+          <BackButton onClick={onBack} />
+          <h1 className="font-serif text-2xl font-semibold tracking-tight">Leaderboard</h1>
+        </header>
 
-      <div className="mt-6 flex">
-        {difficulties.map((setting) => {
-          const isActive = setting.key === difficulty;
+        <div className="mt-6 flex">
+          {difficulties.map((setting) => {
+            const isActive = setting.key === difficulty;
 
-          return (
-            <button
-              key={setting.key}
-              type="button"
-              onClick={() => setDifficulty(setting.key)}
-              aria-pressed={isActive}
-              className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-              style={
-                isActive
-                  ? { color: "var(--foreground)", boxShadow: "inset 0 -2px 0 0 var(--accent)" }
-                  : { color: "var(--faint)", boxShadow: "inset 0 -1px 0 0 var(--rule)" }
-              }
-            >
-              {setting.label}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={setting.key}
+                type="button"
+                onClick={() => setDifficulty(setting.key)}
+                aria-pressed={isActive}
+                className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+                style={
+                  isActive
+                    ? { color: "var(--foreground)", boxShadow: "inset 0 -2px 0 0 var(--accent)" }
+                    : { color: "var(--faint)", boxShadow: "inset 0 -1px 0 0 var(--rule)" }
+                }
+              >
+                {setting.label}
+              </button>
+            );
+          })}
+        </div>
 
-      <p className="label mt-5">Each player&rsquo;s best round</p>
+        <p className="label mt-5">Each player&rsquo;s best round</p>
 
-      <div className="mt-3 flex flex-1 flex-col">
-        {error ? <p className="border border-rule p-4 text-xs text-wrong">{error}</p> : null}
+        <div className="mt-3 flex flex-1 flex-col">
+          {error ? <p className="border border-rule p-4 text-xs text-wrong">{error}</p> : null}
 
-        {!entries && !error ? <p className="label mt-10">Loading</p> : null}
+          {!entries && !error ? <p className="label mt-10">Loading</p> : null}
 
-        {entries?.length === 0 ? (
-          <div className="mt-12 flex flex-col items-start gap-4">
-            <LaurelIcon className="h-8 w-8 text-faint" />
-            <p className="font-serif text-xl text-muted">No scores here yet. Be the first.</p>
-          </div>
-        ) : null}
+          {entries?.length === 0 ? (
+            <div className="mt-12 flex flex-col items-start gap-4">
+              <LaurelIcon className="h-8 w-8 text-faint" />
+              <p className="font-serif text-xl text-muted">No scores here yet. Be the first.</p>
+            </div>
+          ) : null}
 
-        <AnimatePresence initial={false}>
-          {entries?.map((entry, position) => (
-            <Row
-              key={entry.id}
-              position={position + 1}
-              name={entry.displayName}
-              score={entry.score}
-              correct={entry.correctAnswers}
-              total={entry.totalQuestions}
-              createdAt={entry.createdAt}
-              isYou={entry.isYou}
-              isNew={highlighted.includes(entry.id)}
-              delay={live ? 0 : Math.min(position * 0.03, 0.3)}
-            />
-          ))}
-        </AnimatePresence>
+          <AnimatePresence initial={false}>
+            {entries?.map((entry, position) => (
+              <Row
+                key={entry.id}
+                position={position + 1}
+                name={entry.displayName}
+                score={entry.score}
+                correct={entry.correctAnswers}
+                total={entry.totalQuestions}
+                createdAt={entry.createdAt}
+                isYou={entry.isYou}
+                isNew={highlighted.includes(entry.id)}
+                delay={live ? 0 : Math.min(position * 0.03, 0.3)}
+              />
+            ))}
+          </AnimatePresence>
 
-        {you ? (
-          <div className="rule-t mt-4 pt-4">
-            <Row
-              position={you.rank}
-              name={you.displayName}
-              score={you.score}
-              correct={you.correctAnswers}
-              total={you.totalQuestions}
-              createdAt={you.createdAt}
-              isYou
-              isNew={false}
-              delay={0}
-            />
-          </div>
-        ) : null}
-      </div>
-    </main>
+          {you ? (
+            <div className="rule-t mt-4 pt-4">
+              <Row
+                position={you.rank}
+                name={you.displayName}
+                score={you.score}
+                correct={you.correctAnswers}
+                total={you.totalQuestions}
+                createdAt={you.createdAt}
+                isYou
+                isNew={false}
+                delay={0}
+              />
+            </div>
+          ) : null}
+        </div>
+      </main>
+    </LazyMotion>
   );
 }
 
@@ -148,7 +150,7 @@ function Row({
   const accent = isNew || isYou;
 
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -188,6 +190,6 @@ function Row({
       <span className="shrink-0 font-serif text-xl font-semibold tabular-nums text-accent">
         {score}
       </span>
-    </motion.div>
+    </m.div>
   );
 }

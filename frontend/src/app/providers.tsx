@@ -1,12 +1,16 @@
 "use client";
 
-import { MotionConfig } from "framer-motion";
+import { LazyMotion, MotionConfig } from "framer-motion";
 import { ThemeProvider } from "next-themes";
+
+const loadFeatures = () => import("@/lib/motion-features").then((m) => m.default);
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      <LazyMotion features={loadFeatures} strict>
+        <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      </LazyMotion>
     </ThemeProvider>
   );
 }
