@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { answerQuestion, saveGameScore, startGame } from "../application/games.ts";
 import { isChoice, isDifficulty, isIndex } from "../domain/game.ts";
 import { startLimit } from "./limits.ts";
-import { requireUser } from "./session.ts";
+import { fail, requireUser } from "./session.ts";
 
 export const gameRoutes = Router();
 
@@ -14,22 +14,17 @@ const REASONS = {
   already_saved: "This score is already saved.",
 };
 
-const rejection = (code: keyof typeof REASONS) => ({ error: REASONS[code], code });
+const reject = (res: Response, code: keyof typeof REASONS) =>
+  fail(res, code === "not_found" ? 404 : 409, REASONS[code], code);
 
 gameRoutes.post("/", startLimit, async (req, res) => {
   const { difficulty } = req.body ?? {};
 
-  if (!isDifficulty(difficulty)) {
-    res.status(400).json({ error: "difficulty must be one of easy, medium, hard" });
-    return;
-  }
+  if (!isDifficulty(difficulty)) return fail(res, 400, "difficulty must be one of easy, medium, hard");
 
   const result = await startGame(difficulty);
 
-  if (!result.ok) {
-    res.status(503).json({ error: `No ${difficulty} questions are available yet.` });
-    return;
-  }
+  if (!result.ok) return fail(res, 503, `No ${difficulty} questions are available yet.`);
 
   res.status(201).json(result.game);
 });
@@ -37,22 +32,12 @@ gameRoutes.post("/", startLimit, async (req, res) => {
 gameRoutes.post("/:gameId/answers", (req, res) => {
   const { index, choice } = req.body ?? {};
 
-  if (!isIndex(index)) {
-    res.status(400).json({ error: "index must be a non-negative integer" });
-    return;
-  }
-
-  if (!isChoice(choice)) {
-    res.status(400).json({ error: "choice must be an integer 0-3 or null" });
-    return;
-  }
+  if (!isIndex(index)) return fail(res, 400, "index must be a non-negative integer");
+  if (!isChoice(choice)) return fail(res, 400, "choice must be an integer 0-3 or null");
 
   const outcome = answerQuestion(req.params.gameId, index, choice);
 
-  if (!outcome.ok) {
-    res.status(outcome.reason === "not_found" ? 404 : 409).json(rejection(outcome.reason));
-    return;
-  }
+  if (!outcome.ok) return reject(res, outcome.reason);
 
   res.json(outcome);
 });
@@ -63,10 +48,7 @@ gameRoutes.post("/:gameId/save", async (req, res) => {
 
   const result = await saveGameScore(req.params.gameId, user);
 
-  if (!result.ok) {
-    res.status(result.reason === "not_found" ? 404 : 409).json(rejection(result.reason));
-    return;
-  }
+  if (!result.ok) return reject(res, result.reason);
 
   res.status(201).json({ saved: true, rank: result.rank, summary: result.summary });
 });

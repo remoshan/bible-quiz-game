@@ -56,15 +56,27 @@ type Session = {
   startedAt: number;
   finished: boolean;
   saved: boolean;
+  review: ReviewItem[];
   summary: GameSummary | null;
+};
+
+type ReviewItem = {
+  id: string;
+  verse: string;
+  picked: string | null;
+  answer: string;
+  reference: string;
+  translation: string;
 };
 
 export type GameSummary = {
   score: number;
   correctAnswers: number;
   totalQuestions: number;
+  accuracy: number;
   durationMs: number;
   difficulty: Difficulty;
+  review: ReviewItem[];
 };
 
 const sessions = new Map<string, Session>();
@@ -99,8 +111,10 @@ function summaryFor(session: Session, now: number): GameSummary {
     score: session.score,
     correctAnswers: session.correctAnswers,
     totalQuestions: session.questions.length,
+    accuracy: Math.round((session.correctAnswers / session.questions.length) * 100),
     durationMs: now - session.startedAt,
     difficulty: session.difficulty,
+    review: session.review,
   };
 }
 
@@ -130,6 +144,7 @@ export function createSession(difficulty: Difficulty, questions: StoredQuestion[
     startedAt: now,
     finished: false,
     saved: false,
+    review: [],
     summary: null,
   };
 
@@ -179,6 +194,15 @@ export function submitAnswer(gameId: string, index: number, choice: number | nul
   if (correct) {
     session.score += POINTS_PER_CORRECT + secondsLeft * POINTS_PER_SECOND_LEFT;
     session.correctAnswers += 1;
+  } else {
+    session.review.push({
+      id: question.id,
+      verse: question.verse_text,
+      picked: choice === null ? null : question.options[choice],
+      answer: question.options[question.correct_index],
+      reference: question.reference,
+      translation: question.translation,
+    });
   }
 
   const isLast = session.index + 1 >= session.questions.length;

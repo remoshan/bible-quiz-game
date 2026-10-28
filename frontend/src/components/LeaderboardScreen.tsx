@@ -43,8 +43,6 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
     [difficulty, load]
   );
 
-  const inTopList = you !== null && entries !== null && entries.some((e) => e.userId === you.userId);
-
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg">
       <header className="flex flex-col items-start gap-3">
@@ -99,14 +97,14 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
               correct={entry.correctAnswers}
               total={entry.totalQuestions}
               createdAt={entry.createdAt}
-              isYou={you !== null && entry.userId === you.userId}
+              isYou={entry.isYou}
               isNew={highlighted.includes(entry.id)}
               delay={live ? 0 : Math.min(position * 0.03, 0.3)}
             />
           ))}
         </AnimatePresence>
 
-        {you && !inTopList ? (
+        {you ? (
           <div className="rule-t mt-4 pt-4">
             <Row
               position={you.rank}

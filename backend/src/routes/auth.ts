@@ -14,10 +14,12 @@ import {
   userFromToken,
 } from "../infrastructure/accounts.ts";
 import { resetLimit, signInLimit, signUpLimit } from "./limits.ts";
-import { requireUser } from "./session.ts";
+import { fail, requireUser } from "./session.ts";
 
 export const authRoutes = Router();
 
+const BAD_EMAIL = "Enter a valid email address.";
+const BAD_PASSWORD = "Password must be at least 8 characters.";
 const NAME_TAKEN = { status: 409, error: "That display name is taken. Try another." };
 
 async function displayNameProblem(displayName: unknown, ownerId?: string) {
@@ -31,50 +33,27 @@ async function displayNameProblem(displayName: unknown, ownerId?: string) {
 authRoutes.post("/signup", signUpLimit, async (req, res) => {
   const { email, password, displayName } = req.body ?? {};
 
-  if (!isEmail(email)) {
-    res.status(400).json({ error: "Enter a valid email address." });
-    return;
-  }
-
-  if (!isPassword(password)) {
-    res.status(400).json({ error: "Password must be at least 8 characters." });
-    return;
-  }
+  if (!isEmail(email)) return fail(res, 400, BAD_EMAIL);
+  if (!isPassword(password)) return fail(res, 400, BAD_PASSWORD);
 
   const problem = await displayNameProblem(displayName);
-
-  if (problem) {
-    res.status(problem.status).json({ error: problem.error });
-    return;
-  }
+  if (problem) return fail(res, problem.status, problem.error);
 
   const result = await signUp(email, password, displayName);
+  if (!result.ok) return fail(res, 400, result.message);
 
-  if (!result.ok) {
-    res.status(400).json({ error: result.message });
-    return;
-  }
-
-  res.status(201).json({
-    session: result.session,
-    requiresConfirmation: result.requiresConfirmation,
-  });
+  res.status(201).json({ session: result.session, requiresConfirmation: result.requiresConfirmation });
 });
 
 authRoutes.post("/signin", signInLimit, async (req, res) => {
   const { email, password } = req.body ?? {};
 
   if (!isEmail(email) || typeof password !== "string" || password.length === 0) {
-    res.status(400).json({ error: "Enter your email and password." });
-    return;
+    return fail(res, 400, "Enter your email and password.");
   }
 
   const result = await signIn(email, password);
-
-  if (!result.ok) {
-    res.status(401).json({ error: result.message });
-    return;
-  }
+  if (!result.ok) return fail(res, 401, result.message);
 
   res.json({ session: result.session });
 });
@@ -83,16 +62,11 @@ authRoutes.post("/refresh", async (req, res) => {
   const { refreshToken } = req.body ?? {};
 
   if (typeof refreshToken !== "string" || refreshToken.length === 0) {
-    res.status(400).json({ error: "Missing refresh token." });
-    return;
+    return fail(res, 400, "Missing refresh token.");
   }
 
   const result = await refreshSession(refreshToken);
-
-  if (!result.ok) {
-    res.status(401).json({ error: result.message });
-    return;
-  }
+  if (!result.ok) return fail(res, 401, result.message);
 
   res.json({ session: result.session });
 });
@@ -100,10 +74,7 @@ authRoutes.post("/refresh", async (req, res) => {
 authRoutes.post("/forgot", resetLimit, async (req, res) => {
   const { email } = req.body ?? {};
 
-  if (!isEmail(email)) {
-    res.status(400).json({ error: "Enter a valid email address." });
-    return;
-  }
+  if (!isEmail(email)) return fail(res, 400, BAD_EMAIL);
 
   await sendPasswordReset(email);
 
@@ -113,24 +84,13 @@ authRoutes.post("/forgot", resetLimit, async (req, res) => {
 authRoutes.post("/reset", async (req, res) => {
   const { accessToken, password } = req.body ?? {};
 
-  if (!isPassword(password)) {
-    res.status(400).json({ error: "Password must be at least 8 characters." });
-    return;
-  }
+  if (!isPassword(password)) return fail(res, 400, BAD_PASSWORD);
 
   const user = typeof accessToken === "string" && accessToken ? await userFromToken(accessToken) : null;
-
-  if (!user) {
-    res.status(401).json({ error: "This reset link has expired. Request a new one." });
-    return;
-  }
+  if (!user) return fail(res, 401, "This reset link has expired. Request a new one.");
 
   const error = await setPassword(user.id, password);
-
-  if (error) {
-    res.status(400).json({ error });
-    return;
-  }
+  if (error) return fail(res, 400, error);
 
   res.json({ reset: true });
 });
@@ -145,10 +105,7 @@ authRoutes.patch("/profile", async (req, res) => {
     (await displayNameProblem(displayName, user.id)) ??
     ((await renameUser(user.id, displayName)) ? null : NAME_TAKEN);
 
-  if (problem) {
-    res.status(problem.status).json({ error: problem.error });
-    return;
-  }
+  if (problem) return fail(res, problem.status, problem.error);
 
   res.json({ user: { ...user, displayName: displayName.trim() } });
 });

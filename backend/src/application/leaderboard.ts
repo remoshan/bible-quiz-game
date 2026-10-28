@@ -1,3 +1,4 @@
+import { presentLeaderboard } from "../domain/leaderboard.ts";
 import type { AuthUser } from "../infrastructure/accounts.ts";
 import { fetchLeaderboard, fetchPlayerStanding } from "../infrastructure/scores.ts";
 
@@ -9,19 +10,23 @@ export function pageSize(value: unknown) {
   return Number.isInteger(parsed) ? Math.min(Math.max(parsed, 1), MAX_LIMIT) : DEFAULT_LIMIT;
 }
 
+async function standingOf(difficulty: string, viewer: Promise<AuthUser | null>) {
+  const user = await viewer;
+  if (!user) return null;
+
+  const standing = await fetchPlayerStanding(difficulty, user.id);
+  return standing && { userId: user.id, displayName: user.displayName, ...standing };
+}
+
 export async function viewLeaderboard(
   difficulty: string,
   limit: number,
-  viewer: AuthUser | null
+  viewer: Promise<AuthUser | null>
 ) {
-  const entries = await fetchLeaderboard(difficulty, limit);
-  const standing = viewer ? await fetchPlayerStanding(difficulty, viewer.id) : null;
+  const [rows, mine] = await Promise.all([
+    fetchLeaderboard(difficulty, limit),
+    standingOf(difficulty, viewer),
+  ]);
 
-  return {
-    entries,
-    you:
-      standing && viewer
-        ? { ...standing, userId: viewer.id, displayName: viewer.displayName }
-        : null,
-  };
+  return presentLeaderboard(rows, mine);
 }

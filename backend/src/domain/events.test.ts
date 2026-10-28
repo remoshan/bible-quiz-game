@@ -6,8 +6,10 @@ const summary: DomainEvents["game.completed"]["summary"] = {
   score: 420,
   correctAnswers: 4,
   totalQuestions: 5,
+  accuracy: 80,
   durationMs: 9000,
   difficulty: "easy",
+  review: [],
 };
 
 test("a subscriber receives the published payload", () => {
