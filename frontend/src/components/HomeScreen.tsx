@@ -111,7 +111,7 @@ export function HomeScreen({
               type="button"
               disabled={isLoading || !active}
               onClick={() => active && start(active)}
-              className="flex items-center justify-between gap-2 bg-accent px-6 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground transition-opacity disabled:opacity-50"
+              className="button-primary flex items-center justify-between gap-2 px-6 py-4"
             >
               {isLoading ? "Gathering verses" : "Play now"}
               {isLoading ? null : <ArrowRightIcon className="h-4 w-4" />}
@@ -120,7 +120,7 @@ export function HomeScreen({
             <button
               type="button"
               onClick={onOpenLeaderboard}
-              className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em] text-foreground transition-colors hover:border-[var(--rule-strong)]"
+              className="button-secondary text-foreground"
             >
               Leaderboard
             </button>

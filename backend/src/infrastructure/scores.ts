@@ -35,7 +35,7 @@ export async function saveScore(row: ScoreRow) {
   if (error) throw new Error(`Score save failed: ${error.message}`);
 }
 
-export async function fetchLeaderboard(difficulty: string, limit: number) {
+export async function fetchLeaderboard(difficulty: string, limit: number): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase.rpc("get_leaderboard", {
     p_difficulty: difficulty,
     p_limit: limit,

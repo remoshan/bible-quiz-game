@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { AuthPanel } from "@/components/AuthPanel";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGameStore } from "@/store/useGameStore";
@@ -16,7 +16,6 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
   const rank = useGameStore((s) => s.rank);
   const saveError = useGameStore((s) => s.saveError);
   const saveScore = useGameStore((s) => s.saveScore);
-  const missed = useGameStore((s) => s.missed);
 
   const session = useAuthStore((s) => s.session);
   const [shareNote, setShareNote] = useState<string | null>(null);
@@ -28,7 +27,6 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
   if (!summary) return null;
 
   const label = difficulties.find((d) => d.key === summary.difficulty)?.label ?? summary.difficulty;
-  const accuracy = Math.round((summary.correctAnswers / summary.totalQuestions) * 100);
 
   const share = async () => {
     const text = `I scored ${summary.score} on Verse, a Catholic Bible quiz (${label}, ${summary.correctAnswers}/${summary.totalQuestions} correct). Can you beat it?`;
@@ -52,7 +50,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-6 py-8 sm:max-w-lg">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 26 }}
@@ -60,42 +58,36 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
       >
         <p className="label">{label} round complete</p>
 
-        <motion.p
+        <m.p
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 240, damping: 18, delay: 0.12 }}
           className="mt-4 font-serif text-5xl font-semibold leading-none tracking-tight tabular-nums text-accent"
         >
           {summary.score}
-        </motion.p>
+        </m.p>
 
         <div className="rule-t mt-8 grid grid-cols-3 pt-5">
-          <div>
-            <p className="font-serif text-2xl font-semibold tabular-nums">
-              {summary.correctAnswers}/{summary.totalQuestions}
-            </p>
-            <p className="label mt-1">Correct</p>
-          </div>
-          <div>
-            <p className="font-serif text-2xl font-semibold tabular-nums">{accuracy}%</p>
-            <p className="label mt-1">Accuracy</p>
-          </div>
-          <div>
-            <p className="font-serif text-2xl font-semibold tabular-nums">
-              {Math.round(summary.durationMs / 1000)}s
-            </p>
-            <p className="label mt-1">Time</p>
-          </div>
+          {[
+            [`${summary.correctAnswers}/${summary.totalQuestions}`, "Correct"],
+            [`${summary.accuracy}%`, "Accuracy"],
+            [`${Math.round(summary.durationMs / 1000)}s`, "Time"],
+          ].map(([value, caption]) => (
+            <div key={caption}>
+              <p className="font-serif text-2xl font-semibold tabular-nums">{value}</p>
+              <p className="label mt-1">{caption}</p>
+            </div>
+          ))}
         </div>
 
         {saveState === "saved" ? (
-          <motion.p
+          <m.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="rule-t mt-6 pt-4 text-sm font-semibold text-correct"
           >
             Saved to the leaderboard{rank ? ` · rank #${rank}` : ""}
-          </motion.p>
+          </m.p>
         ) : null}
 
         {saveState === "saving" ? (
@@ -105,16 +97,16 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
         {saveState === "failed" ? (
           <p className="rule-t mt-6 pt-4 text-sm text-wrong">{saveError}</p>
         ) : null}
-      </motion.div>
+      </m.div>
 
-      {missed.length > 0 ? (
+      {summary.review.length > 0 ? (
         <details className="rule-t pt-4">
           <summary className="label cursor-pointer">
-            Review {missed.length} missed {missed.length === 1 ? "question" : "questions"}
+            Review {summary.review.length} missed {summary.review.length === 1 ? "question" : "questions"}
           </summary>
 
           <ul className="mt-2">
-            {missed.map((item) => (
+            {summary.review.map((item) => (
               <li key={item.id} className="rule-t py-4 first:border-t-0">
                 <p className="font-serif text-base leading-snug">{item.verse}</p>
                 <p className="mt-2 text-xs text-wrong">
@@ -123,7 +115,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
                 <p className="mt-1 text-xs text-correct">
                   Answer: <span className="font-semibold">{item.answer}</span>
                 </p>
-                <p className="mt-1 text-2xs text-faint">{item.reference}</p>
+                <p className="mt-1 text-2xs text-faint">{item.reference} · {item.translation}</p>
               </li>
             ))}
           </ul>
@@ -141,7 +133,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
         <button
           type="button"
           onClick={() => void start(summary.difficulty)}
-          className="bg-accent px-6 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground"
+          className="button-primary px-6 py-4"
         >
           Play again
         </button>
@@ -149,14 +141,14 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
           type="button"
           onClick={() => void share()}
           aria-live="polite"
-          className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em]"
+          className="button-secondary"
         >
           {shareNote ?? "Share result"}
         </button>
         <button
           type="button"
           onClick={onOpenLeaderboard}
-          className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em]"
+          className="button-secondary"
         >
           View leaderboard
         </button>

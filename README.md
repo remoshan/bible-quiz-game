@@ -329,7 +329,10 @@ a guess-the-book question.
 ```
 
 Rejects `409 out_of_sync` if `index` is not the question the server is holding, and
-`409 already_finished` once the round is over.
+`409 already_finished` once the round is over. The final answer's `summary` carries the
+score, `accuracy` as a percentage, and a `review` of every miss — the verse, what was
+picked (`null` when time ran out), the right answer and its reference — assembled by the
+server from the round it recorded.
 
 ### `POST /api/games/:gameId/save`
 
@@ -350,8 +353,10 @@ A body that is not valid JSON, or is over 8 KB, is a `4xx` with
 ### `GET /api/leaderboard?difficulty=easy&limit=20`
 
 One row per player — their best round at that difficulty — so replaying cannot crowd out
-other players. A signed-in caller also receives their own standing even when it falls
-outside the returned page.
+other players. Player ids never leave the server: each entry carries `isYou` instead,
+marking the caller's own row. A signed-in caller outside the returned page also receives
+their own standing as `you`; inside it, `you` is `null`. The board and the caller's
+standing are queried in parallel.
 
 ---
 
@@ -435,18 +440,17 @@ cd backend && npm test && npm run typecheck
 cd frontend && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-24 backend tests cover scoring and its time-bonus cap, the timeout and latency-grace
-boundaries, replay and skip-ahead rejection, the event bus including a throwing
-subscriber, the realtime broadcast, the rate limit on starting rounds, and the guarantee
-that a question leaves the server without its answer.
+28 backend tests cover scoring and its time-bonus cap, the timeout and latency-grace
+boundaries, replay and skip-ahead rejection, the end-of-round review (each miss with its
+pick and answer, correct answers left out), the leaderboard never exposing player ids,
+the event bus including a throwing subscriber, the realtime broadcast, the rate limit on
+starting rounds, and the guarantee that a question leaves the server without its answer.
 
-18 frontend tests cover:
+16 frontend tests cover:
 
 - **The game store's races** — a double tap sending one answer, a quit during an in-flight
   answer staying quit, deadlines re-based for client clock skew, a concurrent save posting
   once, a failed load retrying.
-- **The mistakes review** — a miss recorded with the pick and the answer, a timeout
-  recorded with no pick, a correct answer left out, a new round starting clean.
 - **Signing in** — a sign-up awaiting email confirmation staying signed out, a sign-in
   storing the server's session.
 - **The password reset** — reading the token from the email link, recognising an expired
@@ -465,8 +469,9 @@ Measured in a real browser at 375 x 812:
 
 | | |
 |---|---|
-| Initial JavaScript | 631 KB across 8 scripts |
-| Leaderboard + realtime | 61 KB, fetched only when the board is opened |
+| Initial JavaScript | 614 KB across 8 scripts — 190 KB gzipped |
+| Game and results screens | 7 KB gzipped each, fetched in the background after first paint |
+| Leaderboard, realtime and layout animation | Fetched only when the board is opened |
 | Game screen | No scroll; all four answers on screen |
 | Pinch-zoom | Not blocked |
 
@@ -532,6 +537,16 @@ full client bundles Postgres, auth, storage and edge-function modules the UI nev
 dropping them cut the largest chunk from 400 KB to 220 KB. `LeaderboardScreen` is then
 loaded on demand, so even that is paid only by players who open the board.
 
+### Animation code loads only where it is used
+
+The home screen animates with CSS alone, so Framer Motion stays off the first paint.
+`providers.tsx` wraps the app in `LazyMotion strict` with the basic feature set loaded
+asynchronously, and every component uses the lightweight `m` element — `strict` makes any
+stray full `motion` element throw instead of silently pulling the whole library back in.
+Only `LeaderboardScreen` needs layout animation for re-ordering rows, so it loads the full
+feature set itself, inside its own on-demand chunk. Together with loading the game and
+results screens on demand, this cut first-load JavaScript from 234 KB to 190 KB gzipped.
+
 ### Reduced motion is honoured once, centrally
 
 `<MotionConfig reducedMotion="user">` in `providers.tsx` covers every Framer animation in
@@ -553,7 +568,7 @@ backend/                      Express API. Rules, scoring, validation, persisten
 ├── src/server.ts             Wiring: cors, json, routers, error handler
 ├── src/routes/               HTTP and request validation only
 ├── src/application/          Use cases; orchestrates domain + adapters
-├── src/domain/               Game rules and the event bus. No I/O
+├── src/domain/               Game rules, leaderboard shaping and the event bus. No I/O
 ├── src/infrastructure/       Supabase adapters
 ├── scripts/                  Question bank + the CPDV verifier
 └── sql/                      Schema and seed
@@ -593,8 +608,9 @@ which, on devices with a mouse only. Keys go through the same guard as taps, so 
 press during the reveal is ignored.
 
 The results screen offers a review of every missed question: the verse, what the player
-chose (or that time ran out), the right answer and its reference. It is built from what the
-server already reveals after each answer, so the review exposes nothing early.
+chose (or that time ran out), the right answer and its reference. The server builds it
+from the round it recorded and sends it only with the final answer, so it exposes nothing
+early and the browser assembles nothing.
 
 **Share result** opens the device's own share sheet where the browser has one, and copies
 the score, the round and the site's address to the clipboard where it does not.

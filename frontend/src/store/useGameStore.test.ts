@@ -20,8 +20,10 @@ const summary = {
   score: 100,
   correctAnswers: 1,
   totalQuestions: 1,
+  accuracy: 100,
   durationMs: 1000,
   difficulty: "easy" as const,
+  review: [],
 };
 
 let games = 0;
@@ -155,47 +157,4 @@ test("a failed difficulty load retries and clears the error", async () => {
 
   expect(useGameStore.getState().difficulties).toHaveLength(1);
   expect(useGameStore.getState().error).toBeNull();
-});
-
-const outcome = (overrides: object) => ({
-  correct: false,
-  correctIndex: 0,
-  reference: "Genesis 1:1",
-  score: 0,
-  status: "playing",
-  next: { index: 1, question, deadline: Date.now() + 21_000, serverNow: Date.now() },
-  summary: null,
-  ...overrides,
-});
-
-test("a missed question is kept for review with the pick and the answer, and a new round starts clean", async () => {
-  await startGame();
-  mockRequest.mockResolvedValueOnce(outcome({ correct: false }));
-
-  await useGameStore.getState().answer(2);
-
-  expect(useGameStore.getState().missed).toEqual([
-    {
-      id: "q1",
-      verse: question.verse_text,
-      picked: "Job",
-      answer: "Genesis",
-      reference: "Genesis 1:1 · CPDV",
-    },
-  ]);
-
-  await startGame();
-  expect(useGameStore.getState().missed).toEqual([]);
-});
-
-test("a correct answer is not listed for review, and a timeout is listed with no pick", async () => {
-  await startGame();
-  mockRequest.mockResolvedValueOnce(outcome({ correct: true, score: 300 }));
-  await useGameStore.getState().answer(0);
-  expect(useGameStore.getState().missed).toEqual([]);
-
-  await startGame();
-  mockRequest.mockResolvedValueOnce(outcome({ correct: false }));
-  await useGameStore.getState().answer(null);
-  expect(useGameStore.getState().missed[0]?.picked).toBeNull();
 });

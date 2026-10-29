@@ -5,6 +5,7 @@ import { DIFFICULTIES } from "./domain/game.ts";
 import { authRoutes } from "./routes/auth.ts";
 import { gameRoutes } from "./routes/games.ts";
 import { leaderboardRoutes } from "./routes/leaderboard.ts";
+import { fail } from "./routes/session.ts";
 
 const port = Number(process.env.PORT ?? 4000);
 const origin = (process.env.CORS_ORIGIN ?? "http://localhost:3000")
@@ -34,13 +35,10 @@ app.use("/api/games", gameRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 
 app.use((error: Error & { status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  if (error.status && error.status < 500) {
-    res.status(error.status).json({ error: "The request could not be read." });
-    return;
-  }
+  if (error.status && error.status < 500) return fail(res, error.status, "The request could not be read.");
 
   console.error(error);
-  res.status(500).json({ error: "Something went wrong on the server." });
+  fail(res, 500, "Something went wrong on the server.");
 });
 
 app.listen(port, () => {

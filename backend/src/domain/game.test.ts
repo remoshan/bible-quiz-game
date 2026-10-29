@@ -156,6 +156,21 @@ test("an unknown game is rejected", () => {
   assert.equal(outcome.ok === false && outcome.reason, "not_found");
 });
 
+test("the summary reviews each miss with the pick and the answer, and leaves correct answers out", () => {
+  const game = createSession("easy", makeQuestions(3));
+
+  submitAnswer(game.gameId, 0, 2);
+  submitAnswer(game.gameId, 1, 0);
+  const last = submitAnswer(game.gameId, 2, null);
+
+  assert.equal(last.ok, true);
+  assert.equal(last.summary?.accuracy, 33);
+  assert.deepEqual(last.summary?.review, [
+    { id: "q1", verse: "verse 1", picked: "a", answer: "c", reference: "Book 1:1", translation: "CPDV" },
+    { id: "q2", verse: "verse 2", picked: null, answer: "c", reference: "Book 2:1", translation: "CPDV" },
+  ]);
+});
+
 test("the final answer finishes the game and returns a summary", () => {
   const game = createSession("easy", makeQuestions(2));
 

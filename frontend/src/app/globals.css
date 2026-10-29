@@ -95,6 +95,18 @@
   @apply bg-accent py-3 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground transition-opacity disabled:opacity-60;
 }
 
+@utility button-secondary {
+  @apply border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em] transition-colors hover:border-[var(--rule-strong)];
+}
+
+@utility subscreen {
+  @apply mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg;
+}
+
+@utility button-link {
+  @apply py-1 text-center text-xs text-muted;
+}
+
 @utility label {
   font-size: var(--text-2xs);
   font-weight: 600;

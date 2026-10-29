@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AccountLayout } from "@/components/AccountLayout";
+import { AccountLayout, Messages } from "@/components/AccountLayout";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function AccountScreen({ onBack }: { onBack: () => void }) {
@@ -47,8 +47,7 @@ export function AccountScreen({ onBack }: { onBack: () => void }) {
           {busy ? "Working…" : "Change display name"}
         </button>
 
-        {error ? <p className="text-center text-xs text-wrong">{error}</p> : null}
-        {notice ? <p className="text-center text-xs text-accent">{notice}</p> : null}
+        <Messages error={error} notice={notice} />
       </form>
 
       <div className="rule-t mt-10 pt-6">

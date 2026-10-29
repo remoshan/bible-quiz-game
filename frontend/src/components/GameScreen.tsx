@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
+import { AnimatePresence, animate, m, useMotionValue } from "framer-motion";
 import { CloseIcon } from "@/components/icons";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -79,7 +79,7 @@ export function GameScreen() {
       </div>
 
       <div className="mt-3 h-px w-full shrink-0 bg-[var(--rule)]">
-        <motion.div
+        <m.div
           className="h-px w-full origin-left bg-accent"
           style={{ scaleX: timeLeft }}
         />
@@ -94,7 +94,7 @@ export function GameScreen() {
 
       <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden py-6">
         <AnimatePresence mode="wait">
-          <motion.div
+          <m.div
             key={question.id}
             initial={{ opacity: 0, x: 28 }}
             animate={{ opacity: 1, x: 0 }}
@@ -112,15 +112,15 @@ export function GameScreen() {
             <p className="mt-5 text-sm text-muted">{question.prompt}</p>
 
             {reference ? (
-              <motion.p
+              <m.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="mt-2 font-serif text-sm font-semibold text-accent"
               >
                 {reference} &middot; {question.translation}
-              </motion.p>
+              </m.p>
             ) : null}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </div>
 

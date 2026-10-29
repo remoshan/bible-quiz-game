@@ -5,16 +5,16 @@ import { type Difficulty } from "@/store/useGameStore";
 
 type Entry = {
   id: string;
-  userId: string;
   displayName: string;
   score: number;
   correctAnswers: number;
   totalQuestions: number;
   durationMs: number;
   createdAt: string;
+  isYou: boolean;
 };
 
-type Standing = Omit<Entry, "id"> & { rank: number };
+type Standing = Omit<Entry, "id" | "isYou"> & { rank: number };
 
 type LeaderboardState = {
   difficulty: Difficulty;
