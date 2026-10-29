@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Messages } from "@/components/AccountLayout";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
@@ -78,11 +79,10 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
         {busy ? "Working…" : isForgot ? "Send reset link" : isSignUp ? "Create account" : "Sign in"}
       </button>
 
-      {error ? <p className="text-center text-xs text-wrong">{error}</p> : null}
-      {notice ? <p className="text-center text-xs text-accent">{notice}</p> : null}
+      <Messages error={error} notice={notice} />
 
       {mode === "signin" ? (
-        <button type="button" onClick={() => go("forgot")} className="py-1 text-center text-xs text-muted">
+        <button type="button" onClick={() => go("forgot")} className="button-link">
           Forgot password?
         </button>
       ) : null}
@@ -90,7 +90,7 @@ export function AuthPanel({ onSuccess }: { onSuccess?: () => void }) {
       <button
         type="button"
         onClick={() => go(isSignUp || isForgot ? "signin" : "signup")}
-        className="py-1 text-center text-xs text-muted"
+        className="button-link"
       >
         {isForgot
           ? "Back to sign in"

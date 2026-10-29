@@ -45,7 +45,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <LazyMotion features={domMax}>
-      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8 pt-5 sm:max-w-lg">
+      <main className="subscreen">
         <header className="flex flex-col items-start gap-3">
           <BackButton onClick={onBack} />
           <h1 className="font-serif text-2xl font-semibold tracking-tight">Leaderboard</h1>

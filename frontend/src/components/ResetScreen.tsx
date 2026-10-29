@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AccountLayout } from "@/components/AccountLayout";
+import { AccountLayout, Messages } from "@/components/AccountLayout";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function ResetScreen({ onDone }: { onDone: () => void }) {
@@ -20,12 +20,11 @@ export function ResetScreen({ onDone }: { onDone: () => void }) {
 
   if (!recovery?.token) {
     return (
-      <AccountLayout onBack={leave} title="This link has expired">
-        <p className="mt-4 max-w-sm text-base leading-relaxed text-muted">
-          Email links work once and only for a short while. Request a new one from the sign-in
-          screen.
-        </p>
-
+      <AccountLayout
+        onBack={leave}
+        title="This link has expired"
+        intro="Email links work once and only for a short while. Request a new one from the sign-in screen."
+      >
         <button type="button" onClick={leave} className="button-primary mt-8">
           Back to sign in
         </button>
@@ -52,7 +51,7 @@ export function ResetScreen({ onDone }: { onDone: () => void }) {
           {busy ? "Working…" : "Set password"}
         </button>
 
-        {error ? <p className="text-center text-xs text-wrong">{error}</p> : null}
+        <Messages error={error} />
       </form>
     </AccountLayout>
   );

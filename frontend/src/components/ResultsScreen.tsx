@@ -68,22 +68,16 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
         </m.p>
 
         <div className="rule-t mt-8 grid grid-cols-3 pt-5">
-          <div>
-            <p className="font-serif text-2xl font-semibold tabular-nums">
-              {summary.correctAnswers}/{summary.totalQuestions}
-            </p>
-            <p className="label mt-1">Correct</p>
-          </div>
-          <div>
-            <p className="font-serif text-2xl font-semibold tabular-nums">{summary.accuracy}%</p>
-            <p className="label mt-1">Accuracy</p>
-          </div>
-          <div>
-            <p className="font-serif text-2xl font-semibold tabular-nums">
-              {Math.round(summary.durationMs / 1000)}s
-            </p>
-            <p className="label mt-1">Time</p>
-          </div>
+          {[
+            [`${summary.correctAnswers}/${summary.totalQuestions}`, "Correct"],
+            [`${summary.accuracy}%`, "Accuracy"],
+            [`${Math.round(summary.durationMs / 1000)}s`, "Time"],
+          ].map(([value, caption]) => (
+            <div key={caption}>
+              <p className="font-serif text-2xl font-semibold tabular-nums">{value}</p>
+              <p className="label mt-1">{caption}</p>
+            </div>
+          ))}
         </div>
 
         {saveState === "saved" ? (
@@ -139,7 +133,7 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
         <button
           type="button"
           onClick={() => void start(summary.difficulty)}
-          className="bg-accent px-6 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-accent-foreground"
+          className="button-primary px-6 py-4"
         >
           Play again
         </button>
@@ -147,14 +141,14 @@ export function ResultsScreen({ onOpenLeaderboard }: { onOpenLeaderboard: () => 
           type="button"
           onClick={() => void share()}
           aria-live="polite"
-          className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em]"
+          className="button-secondary"
         >
           {shareNote ?? "Share result"}
         </button>
         <button
           type="button"
           onClick={onOpenLeaderboard}
-          className="border border-rule px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em]"
+          className="button-secondary"
         >
           View leaderboard
         </button>
