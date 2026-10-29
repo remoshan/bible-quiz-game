@@ -103,7 +103,7 @@ have.
 | `score.saved` | A finished round reaches the leaderboard | activity log, realtime broadcast |
 
 The **application** layer publishes, not the domain. Nothing in `domain/game.ts` knows the
-bus exists, which is what keeps its fifteen tests free of stubs.
+bus exists, which is what keeps its seventeen tests free of stubs.
 
 A subscriber that throws is caught and logged, so a broken listener can never fail the
 request that triggered it. Subscribers live in `application/subscribers.ts` and register
@@ -135,6 +135,7 @@ sequenceDiagram
     A->>D: submitAnswer — server clock decides
     D-->>B: score, correctIndex, next question
     Note over B,D: repeats until the last question
+    D-->>B: summary: accuracy and a review of every miss
     A-)A: game.completed
 ```
 
@@ -162,7 +163,7 @@ sequenceDiagram
 ```
 
 Player B's browser learns only that *an easy round was saved*. Everything it renders comes
-from an authenticated call to the API.
+from a fresh call to the API.
 
 ---
 
@@ -172,7 +173,7 @@ from an authenticated call to the API.
 |---|---|---|
 | UI | Next.js 16 (App Router) | React 19, Turbopack |
 | Styling | Tailwind CSS v4 | No config file — `@theme inline` and `@utility` in `globals.css` |
-| Animation | Framer Motion | Respects `prefers-reduced-motion` app-wide via `MotionConfig` |
+| Animation | Framer Motion | `LazyMotion` keeps it off the first paint; respects `prefers-reduced-motion` via `MotionConfig` |
 | Client state | Zustand | Three stores: auth, game, leaderboard |
 | Theming | next-themes | Three-state System / Light / Dark, available on every screen |
 | API | Express 5 on Node 24 | TypeScript executed directly — no build step |
@@ -230,6 +231,7 @@ The API listens on `http://localhost:4000`, the UI on `http://localhost:3000`.
 ```ini
 PORT=4000
 CORS_ORIGIN=http://localhost:3000
+TRUST_PROXY=1
 
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
@@ -469,7 +471,8 @@ Measured in a real browser at 375 x 812:
 
 | | |
 |---|---|
-| Initial JavaScript | 614 KB across 8 scripts — 190 KB gzipped |
+| Initial JavaScript | 155 KB as served on the live site (614 KB uncompressed) |
+| Page interactive | 0.3 s on the live site, desktop broadband |
 | Game and results screens | 7 KB gzipped each, fetched in the background after first paint |
 | Leaderboard, realtime and layout animation | Fetched only when the board is opened |
 | Game screen | No scroll; all four answers on screen |
@@ -560,8 +563,8 @@ be remembered per component.
 ```
 frontend/                     Next.js UI. No database access, no game rules.
 ├── src/app/                  Routes, layout, providers, global styles
-├── src/components/           Screens and inline SVG icons
-├── src/lib/                  API client, realtime subscription
+├── src/components/           Screens, the shared account layout, inline SVG icons
+├── src/lib/                  API client, realtime subscription, animation features
 └── src/store/                Zustand stores: auth, game, leaderboard
 
 backend/                      Express API. Rules, scoring, validation, persistence.
@@ -661,8 +664,8 @@ password; a token is short-lived and never leaves the player's browser.
 blanked word and the book. Who *said* a line is an editorial judgement made by hand across
 47 questions — the one part of the bank a script cannot defend.
 
-**Frontend tests stop at the store.** The game store's async logic is covered, but no
-component is rendered in a test; the screens are exercised by hand in a real browser.
+**Frontend tests stop at the store.** The game and auth stores' async logic is covered,
+but no component is rendered in a test; the screens are exercised by hand in a real browser.
 
 **Schema changes are manual.** SQL is applied through the Supabase editor with no migration
 tooling, so there is no ordering guarantee and no rollback.
